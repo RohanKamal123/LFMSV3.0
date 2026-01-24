@@ -229,10 +229,17 @@ const Gatekeeper = () => {
                         {loading ? 'CONNECTING...' : <>LET'S GO <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>}
                     </button>
 
-                    <div className="pt-8 border-t border-gray-50">
+                    <div className="pt-8 border-t border-gray-50 flex flex-col gap-4">
                         <p className="text-[10px] text-gray-400 uppercase font-black tracking-[0.3em]">
                             Find-X : A end to end LFMS software
                         </p>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/portfolio')}
+                            className="inline-flex items-center justify-center gap-2 text-[10px] font-black text-orange-600 uppercase tracking-widest hover:text-orange-700 transition-colors"
+                        >
+                            View Project Presentation <ArrowRight size={12} />
+                        </button>
                     </div>
                 </form>
             </div>

@@ -21,8 +21,9 @@ function App() {
                 <Routes>
                     {/* Public Gatekeeper Entry */}
                     <Route path="/" element={<Gatekeeper />} />
-                    <Route path="/portfolio" element={<RoadAccidentsShowcase />} />
+                    <Route path="/portfolio" element={<LFMSPortfolio />} />
                     <Route path="/project-info" element={<LFMSPortfolio />} />
+                    <Route path="/road-accidents" element={<RoadAccidentsShowcase />} />
 
                     {/* Main App Layout */}
                     <Route element={<MainLayout />}>
