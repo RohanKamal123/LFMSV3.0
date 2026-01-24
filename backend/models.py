@@ -12,6 +12,11 @@ class ItemState(str, Enum):
     RESOLVED = "RESOLVED"
     ARCHIVED = "ARCHIVED"
 
+class LostItemStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    RECOVERED = "RECOVERED"
+    ARCHIVED = "ARCHIVED"
+
 class UserRole(str, Enum):
     STUDENT = "STUDENT"
     STAFF = "STAFF"
@@ -27,11 +32,13 @@ class User(SQLModel, table=True):
     uiu_id: str = Field(index=True, unique=True) # Critical unique identifier
     name: str
     email: str
+    phone: Optional[str] = None
     role: UserRole = Field(default=UserRole.STUDENT)
     fraud_score: int = Field(default=0) # 0-100, impacts reputation
     department: Optional[str] = None
     
     items_found: List["Item"] = Relationship(back_populates="finder")
+    items_lost: List["LostItem"] = Relationship(back_populates="reporter")
     claims: List["Claim"] = Relationship(back_populates="claimant")
 
 # --- 2. Category (Dynamic) ---
@@ -40,6 +47,7 @@ class Category(SQLModel, table=True):
     name: str = Field(unique=True)
     icon: str # Lucide icon name string
     items: List["Item"] = Relationship(back_populates="category_rel")
+    lost_items: List["LostItem"] = Relationship(back_populates="category_rel")
 
 # --- 3. Location (Dynamic) ---
 class Location(SQLModel, table=True):
@@ -47,6 +55,7 @@ class Location(SQLModel, table=True):
     name: str = Field(unique=True)
     type: str # Indoor, Outdoor, Lab, etc.
     items: List["Item"] = Relationship(back_populates="location_rel")
+    lost_items: List["LostItem"] = Relationship(back_populates="location_rel")
 
 # --- 4. Item (Core) ---
 class Item(SQLModel, table=True):
@@ -68,6 +77,7 @@ class Item(SQLModel, table=True):
     public_description: str
     private_description: str # The "Secret"
     found_at: datetime = Field(default_factory=datetime.now)
+    state_updated_at: datetime = Field(default_factory=datetime.now)
     
     # Recovery Logic
     recovery_path: Optional[RecoveryPath] = None
@@ -78,11 +88,13 @@ class Item(SQLModel, table=True):
 # --- 5. ItemImage ---
 class ItemImage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    item_id: int = Field(foreign_key="item.id")
+    item_id: Optional[int] = Field(default=None, foreign_key="item.id")
+    lost_item_id: Optional[int] = Field(default=None, foreign_key="lostitem.id")
     url: str
     is_primary: bool = Field(default=False)
     
     item: Optional[Item] = Relationship(back_populates="images")
+    lost_item: Optional["LostItem"] = Relationship(back_populates="images")
 
 # --- 6. Claim ---
 class Claim(SQLModel, table=True):
@@ -136,3 +148,89 @@ class AuditLog(SQLModel, table=True):
     entity_id: int # Item ID or Report ID
     details: str
     timestamp: datetime = Field(default_factory=datetime.now)
+# --- 11. LostItem ---
+class LostItem(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    description: str
+    status: LostItemStatus = Field(default=LostItemStatus.ACTIVE)
+    
+    # Relationships
+    category_id: Optional[int] = Field(default=None, foreign_key="category.id")
+    category_rel: Optional[Category] = Relationship(back_populates="lost_items")
+    
+    location_id: Optional[int] = Field(default=None, foreign_key="location.id")
+    location_rel: Optional[Location] = Relationship(back_populates="lost_items")
+    
+    reporter_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    reporter: Optional[User] = Relationship(back_populates="items_lost")
+    
+    lost_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.now)
+    
+    images: List[ItemImage] = Relationship(back_populates="lost_item")
+
+# --- 12. Fast ID (Student ID Cards) ---
+class FastIDType(str, Enum):
+    FOUND = "FOUND"
+    LOST = "LOST"
+
+class FastIDStatus(str, Enum):
+    PENDING = "PENDING"
+    MATCHED = "MATCHED"
+    RESOLVED = "RESOLVED"
+
+class FastIDItem(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    type: FastIDType
+    extracted_id: Optional[str] = None # For found items (AI extracted)
+    manual_id: Optional[str] = None    # For lost reports (Manual entry)
+    image_url: Optional[str] = None    # Photo of the ID card
+    status: FastIDStatus = Field(default=FastIDStatus.PENDING)
+    
+    reporter_id: int = Field(foreign_key="user.id")
+    location_id: Optional[int] = Field(default=None, foreign_key="location.id")
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+
+class FastIDMatch(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    found_item_id: int = Field(foreign_key="fastiditem.id")
+    lost_item_id: int = Field(foreign_key="fastiditem.id")
+    confidence: float = Field(default=0.0)
+    status: str = Field(default="PENDING") # PENDING, CONFIRMED, REJECTED
+    created_at: datetime = Field(default_factory=datetime.now)
+    resolved_at: Optional[datetime] = None
+
+class CVScanResult(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    fast_id_item_id: int = Field(foreign_key="fastiditem.id")
+    raw_ai_response: str
+    detected_id: Optional[str] = None
+    confidence_score: float
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+# --- 13. Notifications ---
+class NotificationType(str, Enum):
+    FAST_ID_MATCH = "FAST_ID_MATCH"
+    CLAIM_UPDATE = "CLAIM_UPDATE"
+    SYSTEM_ALERT = "SYSTEM_ALERT"
+
+class Notification(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    type: NotificationType
+    title: str
+    message: str
+    is_read: bool = Field(default=False)
+    link: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+
+# --- 14. Handover Sessions (Staff-led Giveaway) ---
+class HandoverSession(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    staff_id: int = Field(foreign_key="user.id")
+    session_token: str = Field(unique=True, index=True)
+    claimant_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.now)

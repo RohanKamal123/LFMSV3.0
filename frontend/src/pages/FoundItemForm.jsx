@@ -3,6 +3,7 @@ import CameraUpload from '../components/CameraUpload';
 import { MapPin, Info, Calendar, User, Tag, Highlighter, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api_config';
 
 const FoundItemForm = () => {
     const navigate = useNavigate();
@@ -35,8 +36,8 @@ const FoundItemForm = () => {
 
     useEffect(() => {
         // Fetch Dynamic Data
-        fetch('http://127.0.0.1:8000/api/browse/categories').then(res => res.json()).then(setCategories);
-        fetch('http://127.0.0.1:8000/api/browse/locations').then(res => res.json()).then(setLocations);
+        fetch(`${API_BASE_URL}/api/browse/categories`).then(res => res.json()).then(setCategories);
+        fetch(`${API_BASE_URL}/api/browse/locations`).then(res => res.json()).then(setLocations);
 
         // Auto-fill Date/Time
         const now = new Date();
@@ -65,7 +66,7 @@ const FoundItemForm = () => {
             const imgData = new FormData();
             imgData.append('file', formData.image);
             try {
-                const uploadRes = await fetch('http://127.0.0.1:8000/api/upload/', { method: 'POST', body: imgData });
+                const uploadRes = await fetch(`${API_BASE_URL}/api/upload/`, { method: 'POST', body: imgData });
                 const uploadJson = await uploadRes.json();
                 imageUrl = uploadJson.url;
             } catch (err) {
@@ -81,19 +82,20 @@ const FoundItemForm = () => {
             location_id: parseInt(formData.location_id),
             public_description: formData.publicDescription,
             private_description: formData.privateDescription,
-            finder_id: user?.id || null
+            finder_id: user?.id || null,
+            image_url: imageUrl
         };
 
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/items/', {
+            const res = await fetch(`${API_BASE_URL}/api/items/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(itemPayload)
             });
 
             if (res.ok) {
-                alert("Item Reported Successfully!");
-                navigate('/browse');
+                alert("SUCCESS! Item Reported. IMPORTANT: Please give the item to Room 110 within 3 days.");
+                navigate('/dashboard'); // Navigate to personal dashboard
             } else {
                 const err = await res.json();
                 alert("Error: " + JSON.stringify(err));
@@ -179,8 +181,7 @@ const FoundItemForm = () => {
                                     name="date"
                                     value={formData.date}
                                     onChange={handleChange}
-                                    className="input-field pl-10 bg-gray-50"
-                                    readOnly
+                                    className="input-field pl-10"
                                 />
                             </div>
                         </div>
@@ -191,8 +192,7 @@ const FoundItemForm = () => {
                                 name="time"
                                 value={formData.time}
                                 onChange={handleChange}
-                                className="input-field bg-gray-50"
-                                readOnly
+                                className="input-field"
                             />
                         </div>
                     </div>

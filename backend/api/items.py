@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
-from typing import List
+from typing import List, Optional
 from database import get_session
 from models import Item, ItemState, User, AuditLog
 from datetime import datetime
@@ -8,7 +8,12 @@ from datetime import datetime
 router = APIRouter()
 
 @router.post("/", response_model=Item)
-def create_item(item: Item, session: Session = Depends(get_session)):
+def create_item(payload: dict, session: Session = Depends(get_session)):
+    from models import ItemImage
+    
+    image_url = payload.pop("image_url", None)
+    item = Item(**payload)
+    
     # Validate finder
     if item.finder_id:
         finder = session.get(User, item.finder_id)
@@ -18,6 +23,15 @@ def create_item(item: Item, session: Session = Depends(get_session)):
     session.add(item)
     session.commit()
     session.refresh(item)
+    
+    if image_url:
+        img_record = ItemImage(
+            item_id=item.id,
+            url=image_url,
+            is_primary=True
+        )
+        session.add(img_record)
+        session.commit()
     
     # Audit Log
     log = AuditLog(
@@ -32,9 +46,11 @@ def create_item(item: Item, session: Session = Depends(get_session)):
     return item
 
 @router.get("/", response_model=List[Item])
-def read_items(session: Session = Depends(get_session)):
-    # Return all items (Feed filters are in browse.py)
-    return session.exec(select(Item)).all()
+def read_items(finder_id: Optional[int] = None, session: Session = Depends(get_session)):
+    query = select(Item)
+    if finder_id:
+        query = query.where(Item.finder_id == finder_id)
+    return session.exec(query).all()
 
 @router.get("/{item_id}", response_model=Item)
 def read_item(item_id: int, session: Session = Depends(get_session)):

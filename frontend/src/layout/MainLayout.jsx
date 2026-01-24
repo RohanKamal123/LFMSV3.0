@@ -10,7 +10,7 @@ const MainLayout = () => {
             </main>
             <footer className="bg-dark text-white py-6 mt-auto">
                 <div className="container mx-auto px-4 text-center">
-                    <p className="text-sm opacity-70">© {new Date().getFullYear()} UIU Find-X. UIU Data Science Club.</p>
+                    <p className="text-sm opacity-70 font-black uppercase tracking-widest">Powered By Find-X</p>
                 </div>
             </footer>
         </div>

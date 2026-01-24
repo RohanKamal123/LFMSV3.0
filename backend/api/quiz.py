@@ -18,8 +18,13 @@ async def create_quiz_for_item(item_id: int, session: Session = Depends(get_sess
         # We allow it for flow demo, but ideally skip archived/resolved
         pass
 
-    print(f"AI Audit: Generating questions for item {item.id}...")
-    questions = await generate_quiz(item.public_description, item.private_description)
+    location_name = item.location_rel.name if item.location_rel else "Unknown Location"
+    questions = await generate_quiz(
+        title=item.title,
+        public_desc=item.public_description,
+        private_desc=item.private_description,
+        location=location_name
+    )
     
     return {
         "item_title": item.title,

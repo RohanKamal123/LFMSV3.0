@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../api_config';
 
 const AuthContext = createContext(null);
 
@@ -7,11 +8,30 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+        const validateSession = async () => {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    // Validate user exists in backend
+                    const res = await fetch(`${API_BASE_URL}/api/auth/me/${userData.id}`);
+                    if (res.ok) {
+                        const validatedUser = await res.json();
+                        setUser(validatedUser);
+                        localStorage.setItem('user', JSON.stringify(validatedUser));
+                    } else {
+                        // Invalid session - clear it
+                        localStorage.removeItem('user');
+                        setUser(null);
+                    }
+                } catch (error) {
+                    // On error, keep stored user but don't validate
+                    setUser(JSON.parse(storedUser));
+                }
+            }
+            setLoading(false);
+        };
+        validateSession();
     }, []);
 
     const login = (userData) => {

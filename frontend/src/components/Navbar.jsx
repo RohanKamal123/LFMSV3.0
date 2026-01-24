@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut, UserCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import uiuLogo from '../assets/uiu_logo.png';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -22,8 +23,11 @@ const Navbar = () => {
 
         if (user.role === 'STUDENT') {
             return [
+                { name: 'Dashboard', path: '/dashboard' },
                 ...baseItems,
+                { name: 'Fast ID', path: '/fast-id' },
                 { name: 'Report Found', path: '/found' },
+                { name: 'Report Lost', path: '/report-lost' },
                 { name: 'Claim Item', path: '/claim' },
             ];
         }
@@ -53,11 +57,9 @@ const Navbar = () => {
             <div className="container mx-auto px-4">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <Link to="/browse" className="flex items-center gap-2 group">
-                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
-                            X
-                        </div>
-                        <div className="hidden sm:block">
+                    <Link to="/browse" className="flex items-center gap-4 group">
+                        <img src={uiuLogo} alt="UIU Logo" className="h-10 object-contain group-hover:scale-105 transition-transform" />
+                        <div className="hidden sm:block border-l-2 border-gray-100 pl-4">
                             <h1 className="text-xl font-black text-gray-900 leading-none">Find-X</h1>
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">UIU System</p>
                         </div>

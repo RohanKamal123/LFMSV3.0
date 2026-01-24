@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Filter, MapPin, Tag, Calendar, User, Eye, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../api_config';
 
 const BrowseItems = () => {
     const navigate = useNavigate();
@@ -12,8 +13,8 @@ const BrowseItems = () => {
 
     useEffect(() => {
         // Hydrate Categories & Locations
-        fetch('http://127.0.0.1:8000/api/browse/categories').then(res => res.json()).then(setCategories);
-        fetch('http://127.0.0.1:8000/api/browse/locations').then(res => res.json()).then(setLocations);
+        fetch(`${API_BASE_URL}/api/browse/categories`).then(res => res.json()).then(setCategories);
+        fetch(`${API_BASE_URL}/api/browse/locations`).then(res => res.json()).then(setLocations);
     }, []);
 
     useEffect(() => {
@@ -28,7 +29,7 @@ const BrowseItems = () => {
         if (filters.search) params.append('search', filters.search);
 
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/browse/?${params.toString()}`);
+            const res = await fetch(`${API_BASE_URL}/api/browse/?${params.toString()}`);
             const data = await res.json();
             setItems(data);
         } catch (err) {
@@ -117,15 +118,16 @@ const BrowseItems = () => {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     {items.map((item) => (
-                        <div key={item.id} className="bg-white rounded-[2.5rem] p-3 shadow-xl shadow-gray-200/40 border border-gray-50 hover:shadow-2xl transition-all duration-500 group">
+                        <div key={`${item.type}-${item.id}`} className="bg-white rounded-[2.5rem] p-3 shadow-xl shadow-gray-200/40 border border-gray-50 hover:shadow-2xl transition-all duration-500 group">
                             <div className="relative h-64 rounded-[2rem] overflow-hidden mb-6">
                                 <img
-                                    src={`https://placehold.co/600x400/orange/white?text=${item.title}`}
+                                    src={item.image_url || `https://placehold.co/600x400/${item.type === 'LOST' ? 'red' : 'orange'}/white?text=${item.title}`}
                                     alt={item.title}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                 />
-                                <div className="absolute top-4 right-4 bg-white/95 px-4 py-2 rounded-full text-[10px] font-black tracking-widest text-primary shadow-xl">
-                                    {item.state}
+                                <div className={`absolute top-4 right-4 px-4 py-2 rounded-full text-[10px] font-black tracking-widest shadow-xl ${item.type === 'LOST' ? 'bg-red-500 text-white' : 'bg-white/95 text-primary'
+                                    }`}>
+                                    {item.type} {item.state}
                                 </div>
                             </div>
 
@@ -146,18 +148,32 @@ const BrowseItems = () => {
                                 </div>
 
                                 <p className="text-sm text-gray-500 font-medium line-clamp-2 leading-relaxed mb-6">
-                                    {item.public_description}
+                                    {item.description}
                                 </p>
 
                                 <div className="flex justify-between items-center pt-5 border-t border-gray-50">
-                                    <button
-                                        onClick={() => navigate(`/claim?itemId=${item.id}`)}
-                                        className="text-xs font-black text-primary hover:text-orange-700 uppercase tracking-widest flex items-center gap-1 group/btn"
-                                    >
-                                        Claim Asset <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                                    </button>
+                                    {item.type === 'FOUND' ? (
+                                        <button
+                                            onClick={() => navigate(`/claim?itemId=${item.id}`)}
+                                            className="text-xs font-black text-primary hover:text-orange-700 uppercase tracking-widest flex items-center gap-1 group/btn"
+                                        >
+                                            Claim Asset <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                                        </button>
+                                    ) : (
+                                        <div className="flex flex-col gap-1">
+                                            <button
+                                                onClick={() => {
+                                                    const info = `Email: ${item.contact_email}\nPhone: ${item.contact_phone || 'N/A'}`;
+                                                    alert(info);
+                                                }}
+                                                className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest flex items-center gap-1"
+                                            >
+                                                Contact Reporter <ArrowRight size={10} />
+                                            </button>
+                                        </div>
+                                    )}
                                     <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
-                                        {new Date(item.found_at).toLocaleDateString()}
+                                        {new Date(item.date).toLocaleDateString()}
                                     </span>
                                 </div>
                             </div>
