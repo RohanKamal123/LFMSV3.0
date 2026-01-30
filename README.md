@@ -1,4 +1,4 @@
-# Find-X: UIU Lost & Found Management System
+# Find-X: UIU Lost & Found Management System (V3.0)
 
 ## Project Structure
 - `backend/`: FastAPI Backend with SQLModel (SQLite)
