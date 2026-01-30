@@ -24,7 +24,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchAllData();
-        const timer = setInterval(fetchAllData, 10000); // Poll every 10s
+        const timer = setInterval(fetchAllData, 10000);
         return () => clearInterval(timer);
     }, []);
 
@@ -62,58 +62,75 @@ const AdminDashboard = () => {
                     <Terminal size={48} className="text-primary animate-pulse" />
                 </div>
             </div>
-            <h2 className="text-2xl font-black text-gray-900 uppercase tracking-[0.3em] mb-2 font-inter">HQ Syncing</h2>
-            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">Bridging secure administrative tunnels...</p>
+            <h2 className="text-2xl font-black text-gray-900 uppercase tracking-[0.3em] mb-2">Syncing HQ</h2>
+            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">Accessing secure admin tunnels...</p>
         </div>
     );
 
     const tabs = [
-        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-        { id: 'logs', label: 'Monitor', icon: UserCheck },
-        { id: 'items', label: 'Items CRUD', icon: Archive },
-        { id: 'fast_id', label: 'ID Registry', icon: Users },
-        { id: 'flow', label: 'Flow CRUD', icon: Layers },
+        { id: 'analytics', label: 'Analytics', icon: BarChart3, desc: 'System Metrics' },
+        { id: 'logs', label: 'Log Monitoring', icon: UserCheck, desc: 'Audit Explorer' },
+        { id: 'items', label: 'Items CRUD', icon: Archive, desc: 'Asset Registry' },
+        { id: 'inventory_110', label: '110 Inventory', icon: Database, desc: 'Office Storage' },
+        { id: 'fast_id', label: 'ID Card CRUD', icon: Users, desc: 'FastID Control' },
+        { id: 'flow', label: 'Flow CRUD', icon: Layers, desc: 'Lifecycle Injection' },
     ];
 
     return (
-        <div className="pb-20 font-inter animate-in fade-in duration-500">
-            {/* Command Header */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-12 gap-8">
+        <div className="flex flex-col min-h-[85vh] gap-12 font-inter pb-20">
+            {/* Header Area */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
                 <div>
-                    <h2 className="text-6xl font-black text-gray-900 tracking-tighter uppercase leading-none">Command Hub</h2>
+                    <h2 className="text-6xl font-black text-gray-900 tracking-tighter uppercase leading-none mb-4">Admin Hub</h2>
+                    <div className="flex items-center gap-2 group cursor-pointer" onClick={handleManualRefresh}>
+                        <div className={`w-3 h-3 rounded-full bg-green-500 ${refreshing ? 'animate-ping' : ''}`}></div>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Network Live</span>
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 bg-gray-100 p-2 rounded-[2rem] shadow-inner border border-gray-200/50">
+                <div className="p-6 bg-primary/10 rounded-[2.5rem] border border-primary/20 flex items-center gap-6">
+                    <div>
+                        <div className="text-primary font-black text-[9px] uppercase tracking-widest mb-1">Office Status</div>
+                        <div className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none">{stats?.room_110_count || 0} Assets</div>
+                        <p className="text-[8px] text-gray-500 font-bold uppercase mt-1">Stored in Room 110</p>
+                    </div>
+                    <Database size={40} className="text-primary opacity-20" />
+                </div>
+            </div>
+
+            {/* Horizontal Navigation */}
+            <div className="sticky top-20 z-30 bg-white/80 backdrop-blur-xl p-2 rounded-[3rem] border border-gray-100 shadow-xl overflow-x-auto no-scrollbar">
+                <nav className="flex items-center gap-2 min-w-max">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
-                                ? 'bg-white text-primary shadow-xl scale-105'
-                                : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'
+                            className={`flex items-center gap-4 px-8 py-5 rounded-[2.5rem] transition-all group ${activeTab === tab.id
+                                ? 'bg-gray-900 text-white shadow-2xl shadow-gray-900/40 scale-105'
+                                : 'text-gray-400 hover:bg-gray-50'
                                 }`}
                         >
-                            <tab.icon size={14} />
-                            {tab.label}
+                            <div className={`p-2 rounded-xl ${activeTab === tab.id ? 'bg-primary' : 'bg-gray-100 text-gray-400 group-hover:text-primary transition-colors'}`}>
+                                <tab.icon size={18} />
+                            </div>
+                            <div className="text-left">
+                                <div className="text-[12px] font-black uppercase tracking-tight">{tab.label}</div>
+                                <div className={`text-[8px] font-bold uppercase tracking-widest ${activeTab === tab.id ? 'text-gray-400' : 'text-gray-300'}`}>{tab.desc}</div>
+                            </div>
                         </button>
                     ))}
-                    <button
-                        onClick={handleManualRefresh}
-                        className={`p-3 rounded-full text-gray-400 hover:bg-white hover:text-primary transition-all ${refreshing ? 'animate-spin text-primary' : ''}`}
-                    >
-                        <RefreshCw size={14} />
-                    </button>
-                </div>
+                </nav>
             </div>
 
-            {/* Current View */}
-            <div className="animate-in slide-in-from-bottom-8 duration-700">
+            {/* Main Content Area */}
+            <main className="animate-in slide-in-from-bottom-12 duration-700">
                 {activeTab === 'analytics' && <AnalyticsPanel stats={stats} />}
                 {activeTab === 'logs' && <LogsPanel logs={loginLogs} />}
                 {activeTab === 'items' && <ItemsCrudPanel items={items} refresh={fetchAllData} userId={user?.id} />}
+                {activeTab === 'inventory_110' && <Room110Panel items={items} />}
                 {activeTab === 'fast_id' && <FastIdCrudPanel items={fastIdItems} refresh={fetchAllData} />}
                 {activeTab === 'flow' && <FlowOverridePanel items={items} refresh={fetchAllData} userId={user?.id} />}
-            </div>
+            </main>
         </div>
     );
 };
@@ -149,77 +166,122 @@ const AnalyticsPanel = ({ stats }) => {
             </div>
 
             {/* Performance Chart */}
-            <div className="grid lg:grid-cols-3 gap-10">
-                <div className="lg:col-span-2 bg-white p-10 rounded-[4rem] border border-gray-100 shadow-2xl relative overflow-hidden">
-                    <div className="flex justify-between items-center mb-12">
-                        <div>
-                            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">System Intelligence</h3>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 italic">Last 7 Cycles Activity</p>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-orange-500/20"></div><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Found</span></div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-teal-400 shadow-lg shadow-teal-500/20"></div><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resolved</span></div>
+            <div className="bg-gray-900 p-10 rounded-[4rem] text-white shadow-2xl relative overflow-hidden group">
+                <div className="relative z-10">
+                    <h3 className="text-2xl font-black uppercase tracking-tighter mb-10 flex items-center gap-3">
+                        <ShieldCheck className="text-orange-500" size={28} />
+                        Sector Activity
+                    </h3>
+                    <div className="space-y-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {(stats.location_counts || []).map((loc, i) => (
+                            <div key={i}>
+                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
+                                    <span>{loc.name} Density</span>
+                                    <span className="text-white">{loc.count} Assets</span>
+                                </div>
+                                <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden border border-white/5">
+                                    <div
+                                        className="bg-orange-500 h-full rounded-full transition-all duration-1000"
+                                        style={{ width: `${Math.min((loc.count / (stats.summary.ACTIVE || 1)) * 100, 100)}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        ))}
+                        <div className="pt-8 border-t border-white/5 mt-10">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Verification Accuracy</p>
+                            <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full animate-pulse shadow-lg ${stats.claim_stats?.success_rate > 70 ? 'bg-green-500 shadow-green-500/50' : 'bg-orange-500 shadow-orange-500/50'}`}></div>
+                                <span className="text-2xl font-black uppercase tracking-widest">{stats.claim_stats?.success_rate || 100}%</span>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div className="h-[350px] w-full">
+            {/* Bottom Row - More Analytics */}
+            <div className="grid lg:grid-cols-2 gap-10">
+                <div className="bg-white p-10 rounded-[4rem] border border-gray-100 shadow-2xl">
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter mb-8 flex items-center gap-3">
+                        <Clock className="text-primary" size={24} />
+                        Peak Intake Hours
+                    </h3>
+                    <div className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats.timeline}>
-                                <defs>
-                                    <linearGradient id="primaryGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#FF6B00" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="#FF6B00" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="tealGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#2DD4BF" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="#2DD4BF" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="date" stroke="#94A3B8" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} />
-                                <YAxis stroke="#94A3B8" fontSize={10} fontWeight="bold" tickLine={false} axisLine={false} />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '25px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', padding: '20px' }}
-                                    itemStyle={{ fontWeight: 'black', fontSize: '10px', textTransform: 'uppercase' }}
-                                />
-                                <Area type="monotone" dataKey="found" stroke="#FF6B00" strokeWidth={5} fillOpacity={1} fill="url(#primaryGrad)" />
-                                <Area type="monotone" dataKey="resolved" stroke="#2DD4BF" strokeWidth={5} fillOpacity={1} fill="url(#tealGrad)" />
-                            </AreaChart>
+                            <BarChart data={stats.hourly_stats}>
+                                <Bar dataKey="count" fill="#FF6B00" radius={[10, 10, 0, 0]} />
+                                <XAxis dataKey="hour" fontSize={8} fontWeight="bold" axisLine={false} tickLine={false} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 30px -10px rgb(0 0 0 / 0.1)' }} />
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="bg-gray-900 p-10 rounded-[4rem] text-white shadow-2xl relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <h3 className="text-2xl font-black uppercase tracking-tighter mb-10 flex items-center gap-3">
-                            <ShieldCheck className="text-orange-500" size={28} />
-                            Logistics Yield
-                        </h3>
-                        <div className="space-y-8">
-                            {['Sector A', 'Sector B', 'Sector C'].map((sector, i) => (
-                                <div key={i}>
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">
-                                        <span>{sector} Integrity</span>
-                                        <span className="text-white">{90 - (i * 10)}%</span>
-                                    </div>
-                                    <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden border border-white/5">
-                                        <div
-                                            className="bg-orange-500 h-full rounded-full transition-all duration-1000"
-                                            style={{ width: `${90 - (i * 10)}%` }}
-                                        ></div>
-                                    </div>
+                <div className="bg-white p-10 rounded-[4rem] border border-gray-100 shadow-2xl">
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter mb-8 flex items-center gap-3">
+                        <TrendingUp className="text-teal-500" size={24} />
+                        Top Network Contributors
+                    </h3>
+                    <div className="space-y-4">
+                        {(stats.user_activity || []).map((u, i) => (
+                            <div key={i} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-teal-100 transition-all">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center text-[10px] font-black">{i + 1}</div>
+                                    <span className="text-xs font-black uppercase tracking-tight text-gray-700">{u.name}</span>
                                 </div>
-                            ))}
-                            <div className="pt-8 border-t border-white/5 mt-10">
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">System Status</p>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-                                    <span className="text-lg font-black uppercase tracking-widest">Optimized</span>
-                                </div>
+                                <span className="text-xs font-black text-teal-600">{u.count} Assets Found</span>
                             </div>
-                        </div>
+                        ))}
                     </div>
-                    <div className="absolute right-[-20%] bottom-[-20%] w-80 h-80 bg-orange-600/10 rounded-full blur-[100px]"></div>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const Room110Panel = ({ items }) => {
+    // Filter items where location_id belongs to Room 110 (usually name like "Office" or "110")
+    // For now, we simulate filter by checking title or location name
+    const roomItems = items.filter(i => i.location_id === 3); // Annex/Office simulation
+
+    return (
+        <div className="space-y-10">
+            <div className="bg-indigo-600 p-12 rounded-[4rem] text-white shadow-2xl relative overflow-hidden">
+                <div className="relative z-10 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-5xl font-black uppercase tracking-tighter">110 Inventory</h2>
+                        <p className="text-indigo-200 font-bold text-sm uppercase tracking-[0.2em] mt-2">Physical Asset Vault</p>
+                    </div>
+                    <Database size={80} className="opacity-20 translate-x-10 translate-y-10" />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-[4rem] border border-gray-100 shadow-2xl overflow-hidden">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="border-b-2 border-gray-50">
+                            <th className="px-10 py-6 text-[10px] font-black uppercase text-gray-400">Asset</th>
+                            <th className="px-10 py-6 text-[10px] font-black uppercase text-gray-400">Security State</th>
+                            <th className="px-10 py-6 text-[10px] font-black uppercase text-gray-400">Date Logged</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {roomItems.map(item => (
+                            <tr key={item.id} className="group hover:bg-gray-50 transition-colors">
+                                <td className="px-10 py-8">
+                                    <div className="font-black text-gray-900 uppercase tracking-tight">{item.title}</div>
+                                    <div className="text-[10px] text-gray-400 font-bold mt-1 uppercase">LOC_ID: {item.location_id}</div>
+                                </td>
+                                <td className="px-10 py-8">
+                                    <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-100">{item.state}</span>
+                                </td>
+                                <td className="px-10 py-8 text-[10px] font-black text-gray-300 uppercase">
+                                    {new Date(item.found_at).toLocaleDateString()}
+                                </td>
+                            </tr>
+                        ))}
+                        {roomItems.length === 0 && <tr><td colSpan="3" className="p-20 text-center text-gray-300 font-black uppercase tracking-widest">No assets physically held in Room 110</td></tr>}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
@@ -339,7 +401,23 @@ const ItemsCrudPanel = ({ items, refresh, userId }) => {
                             <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-10 py-8">
                                     {editing === item.id ? (
-                                        <input className="w-full bg-white border-2 border-primary rounded-xl px-4 py-3 font-bold text-sm outline-none" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+                                        <div className="space-y-3">
+                                            <input
+                                                className="w-full bg-white border-2 border-primary rounded-xl px-4 py-3 font-bold text-sm outline-none shadow-sm focus:shadow-orange-500/10"
+                                                value={form.title}
+                                                onChange={e => setForm({ ...form, title: e.target.value })}
+                                                placeholder="Title"
+                                            />
+                                            <select
+                                                className="w-full bg-white border-2 border-primary rounded-xl px-4 py-3 font-bold text-sm outline-none shadow-sm"
+                                                value={form.state}
+                                                onChange={e => setForm({ ...form, state: e.target.value })}
+                                            >
+                                                {['ACTIVE', 'PENDING_HANDOVER', 'READY_FOR_PICKUP', 'RESOLVED', 'ARCHIVED'].map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     ) : (
                                         <>
                                             <div className="font-black text-gray-900 uppercase tracking-tight text-lg">{item.title}</div>
@@ -348,25 +426,29 @@ const ItemsCrudPanel = ({ items, refresh, userId }) => {
                                     )}
                                 </td>
                                 <td className="px-10 py-8">
-                                    <span className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border-2
-                                        ${item.state === 'ACTIVE' ? 'bg-teal-50 text-teal-600 border-teal-100' :
-                                            item.state === 'RESOLVED' ? 'bg-green-50 text-green-600 border-green-100' :
-                                                'bg-orange-50 text-orange-600 border-orange-100'}
-                                    `}>
-                                        {item.state}
-                                    </span>
+                                    {editing === item.id ? (
+                                        <span className="text-[10px] font-black text-primary animate-pulse uppercase tracking-[0.2em]">Editing Session...</span>
+                                    ) : (
+                                        <span className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border-2
+                                            ${item.state === 'ACTIVE' ? 'bg-teal-50 text-teal-600 border-teal-100' :
+                                                item.state === 'RESOLVED' ? 'bg-green-50 text-green-600 border-green-100' :
+                                                    'bg-orange-50 text-orange-600 border-orange-100'}
+                                        `}>
+                                            {item.state}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-10 py-8 text-right">
                                     <div className="flex justify-end gap-3">
                                         {editing === item.id ? (
                                             <>
-                                                <button onClick={() => handleUpdate(item.id)} className="p-3 bg-green-500 text-white rounded-2xl shadow-lg shadow-green-500/20"><CheckCircle2 size={18} /></button>
-                                                <button onClick={() => setEditing(null)} className="p-3 bg-gray-200 text-gray-500 rounded-2xl"><X size={18} /></button>
+                                                <button onClick={() => handleUpdate(item.id)} className="p-3 bg-green-500 text-white rounded-2xl shadow-lg shadow-green-500/20 hover:scale-110 transition-transform"><CheckCircle2 size={18} /></button>
+                                                <button onClick={() => setEditing(null)} className="p-3 bg-gray-200 text-gray-400 rounded-2xl hover:bg-gray-300 transition-colors"><X size={18} /></button>
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => { setEditing(item.id); setForm(item); }} className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:bg-primary hover:text-white transition-all"><Edit3 size={18} /></button>
-                                                <button onClick={() => handleDelete(item.id)} className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                                                <button onClick={() => { setEditing(item.id); setForm({ title: item.title, state: item.state }); }} className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:bg-primary hover:text-white transition-all hover:scale-110"><Edit3 size={18} /></button>
+                                                <button onClick={() => handleDelete(item.id)} className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all hover:scale-110"><Trash2 size={18} /></button>
                                             </>
                                         )}
                                     </div>
@@ -404,41 +486,72 @@ const FastIdCrudPanel = ({ items, refresh }) => {
                     <thead>
                         <tr className="bg-white border-b-2 border-gray-50">
                             <th className="px-10 py-6 font-black uppercase tracking-widest text-[10px] text-gray-400">Card Preview</th>
+                            <th className="px-10 py-6 font-black uppercase tracking-widest text-[10px] text-gray-400">Lifecycle State (5-Stage Flow)</th>
                             <th className="px-10 py-6 font-black uppercase tracking-widest text-[10px] text-gray-400">Extracted ID</th>
                             <th className="px-10 py-6 font-black uppercase tracking-widest text-[10px] text-gray-400 text-right">Ops</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                        {items.map(r => (
-                            <tr key={r.id} className="hover:bg-gray-50 transition-colors group">
-                                <td className="px-10 py-6">
-                                    {r.image_url ? (
-                                        <div className="relative group/eye w-28 h-16 bg-gray-50 rounded-xl overflow-hidden border-2 border-gray-100 cursor-pointer shadow-sm hover:border-indigo-400 transition-all" onClick={() => setPreview(`${API_BASE_URL}${r.image_url}`)}>
-                                            <img src={`${API_BASE_URL}${r.image_url}`} className="w-full h-full object-contain group-hover/eye:scale-110 transition-transform p-1" />
-                                            <div className="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover/eye:opacity-100 transition-opacity flex items-center justify-center"><Eye size={18} className="text-white drop-shadow-md" /></div>
-                                        </div>
-                                    ) : <span className="text-[10px] font-black text-gray-300 uppercase italic">No Visual</span>}
-                                </td>
-                                <td className="px-10 py-6">
-                                    {editing === r.id ? (
-                                        <div className="flex gap-2">
-                                            <input className="bg-white border-2 border-primary rounded-xl px-4 py-3 font-bold text-sm outline-none shadow-xl" value={val} onChange={e => setVal(e.target.value)} autoFocus />
-                                            <button onClick={() => handleUpdate(r.id)} className="p-3 bg-primary text-white rounded-xl shadow-lg shadow-orange-500/20"><CheckCircle2 size={18} /></button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-3">
-                                            <div className={`text-xl font-black uppercase tracking-tight ${!r.extracted_id && !r.manual_id ? 'text-red-500 animate-pulse' : 'text-gray-900'}`}>
-                                                {r.extracted_id || r.manual_id || 'Extraction Failed'}
+                        {items.map(r => {
+                            // Calculate current stage (1-5)
+                            let stage = 1; // Reported
+                            if (r.id) stage = 2; // Pre-processing
+                            if (r.extracted_id || r.manual_id) stage = 3; // Extraction
+                            if (r.status === 'MATCHED') stage = 4; // Matching
+                            if (r.status === 'RESOLVED') stage = 5; // Resolved
+
+                            return (
+                                <tr key={r.id} className="hover:bg-gray-50 transition-colors group">
+                                    <td className="px-10 py-6">
+                                        {r.image_url ? (
+                                            <div className="relative group/eye w-28 h-16 bg-gray-50 rounded-xl overflow-hidden border-2 border-gray-100 cursor-pointer shadow-sm hover:border-indigo-400 transition-all" onClick={() => setPreview(`${API_BASE_URL}${r.image_url}`)}>
+                                                <img src={`${API_BASE_URL}${r.image_url}`} className="w-full h-full object-contain group-hover/eye:scale-110 transition-transform p-1" />
+                                                <div className="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover/eye:opacity-100 transition-opacity flex items-center justify-center"><Eye size={18} className="text-white drop-shadow-md" /></div>
                                             </div>
-                                            <button onClick={() => { setEditing(r.id); setVal(r.extracted_id || r.manual_id || ''); }} className="p-2 text-gray-300 hover:text-primary transition-opacity opacity-0 group-hover:opacity-100"><Edit3 size={16} /></button>
+                                        ) : <span className="text-[10px] font-black text-gray-300 uppercase italic">No Visual</span>}
+                                    </td>
+                                    <td className="px-10 py-6">
+                                        <div className="flex items-center gap-1">
+                                            {[1, 2, 3, 4, 5].map(s => (
+                                                <div key={s} className="flex items-center">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${s <= stage ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-100 text-gray-300'}`}>
+                                                        {s}
+                                                    </div>
+                                                    {s < 5 && <div className={`w-4 h-1 rounded-full mx-1 ${s < stage ? 'bg-indigo-600' : 'bg-gray-100'}`}></div>}
+                                                </div>
+                                            ))}
+                                            <div className="ml-4">
+                                                <span className="text-[8px] font-black uppercase text-gray-400 tracking-widest">
+                                                    {stage === 1 && 'Reported'}
+                                                    {stage === 2 && 'Pre-processing'}
+                                                    {stage === 3 && 'Extraction'}
+                                                    {stage === 4 && 'Match Confirmed'}
+                                                    {stage === 5 && 'Vault Resolved'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    )}
-                                </td>
-                                <td className="px-10 py-6 text-right">
-                                    <button onClick={async () => { if (confirm("Purge ID record?")) { await fetch(`${API_BASE_URL}/api/fast-id/items/${r.id}`, { method: 'DELETE' }); refresh(); } }} className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
-                                </td>
-                            </tr>
-                        ))}
+                                    </td>
+                                    <td className="px-10 py-6">
+                                        {editing === r.id ? (
+                                            <div className="flex gap-2">
+                                                <input className="bg-white border-2 border-primary rounded-xl px-4 py-3 font-bold text-sm outline-none shadow-xl" value={val} onChange={e => setVal(e.target.value)} autoFocus />
+                                                <button onClick={() => handleUpdate(r.id)} className="p-3 bg-primary text-white rounded-xl shadow-lg shadow-orange-500/20"><CheckCircle2 size={18} /></button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-3">
+                                                <div className={`text-xl font-black uppercase tracking-tight ${!r.extracted_id && !r.manual_id ? 'text-red-500 animate-pulse' : 'text-gray-900'}`}>
+                                                    {r.extracted_id || r.manual_id || 'Extraction Failed'}
+                                                </div>
+                                                <button onClick={() => { setEditing(r.id); setVal(r.extracted_id || r.manual_id || ''); }} className="p-2 text-gray-300 hover:text-primary transition-opacity opacity-0 group-hover:opacity-100"><Edit3 size={16} /></button>
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-10 py-6 text-right">
+                                        <button onClick={async () => { if (confirm("Purge ID record?")) { await fetch(`${API_BASE_URL}/api/fast-id/items/${r.id}`, { method: 'DELETE' }); refresh(); } }} className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

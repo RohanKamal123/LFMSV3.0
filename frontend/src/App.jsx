@@ -27,24 +27,28 @@ function App() {
 
                     {/* Main App Layout */}
                     <Route element={<MainLayout />}>
-                        {/* Student Access */}
+                        {/* Student Routes */}
                         <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
                             <Route path="/dashboard" element={<Dashboard />} />
-                            <Route path="/browse" element={<BrowseItems />} />
                             <Route path="/found" element={<FoundItemForm />} />
                             <Route path="/report-lost" element={<ReportLost />} />
                             <Route path="/claim" element={<ClaimFlow />} />
                             <Route path="/fast-id" element={<FastID />} />
                         </Route>
 
-                        {/* Staff Access */}
-                        <Route element={<ProtectedRoute allowedRoles={['STAFF']} />}>
+                        {/* Staff & Admin Shared */}
+                        <Route element={<ProtectedRoute allowedRoles={['STAFF', 'ADMIN']} />}>
                             <Route path="/staff" element={<StaffPanel />} />
                         </Route>
 
-                        {/* Admin Access */}
+                        {/* Admin Only */}
                         <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                             <Route path="/admin" element={<AdminDashboard />} />
+                        </Route>
+
+                        {/* All Logged In Users */}
+                        <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'STAFF', 'ADMIN']} />}>
+                            <Route path="/browse" element={<BrowseItems />} />
                         </Route>
                     </Route>
                 </Routes>

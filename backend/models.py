@@ -145,7 +145,7 @@ class AuditLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     actor_id: int # User ID performed action
     action_type: str # SCAN_QR, STATE_CHANGE, VERIFY_CLAIM
-    entity_id: int # Item ID or Report ID
+    entity_id: Optional[int] = Field(default=None) # Item ID or Report ID
     details: str
     timestamp: datetime = Field(default_factory=datetime.now)
 # --- 11. LostItem ---

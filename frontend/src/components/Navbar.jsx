@@ -19,16 +19,16 @@ const Navbar = () => {
     const getNavItems = () => {
         if (!user) return [];
 
-        const baseItems = [{ name: 'Browse Feed', path: '/browse' }];
+        const baseItems = [{ name: 'Browse Items', path: '/browse' }];
 
         if (user.role === 'STUDENT') {
             return [
-                { name: 'Dashboard', path: '/dashboard' },
+                { name: 'Hub Overview', path: '/dashboard' },
                 ...baseItems,
                 { name: 'Fast ID', path: '/fast-id' },
                 { name: 'Report Found', path: '/found' },
                 { name: 'Report Lost', path: '/report-lost' },
-                { name: 'Claim Item', path: '/claim' },
+                { name: 'My Claims', path: '/dashboard?tab=claims' },
             ];
         }
 
@@ -41,8 +41,8 @@ const Navbar = () => {
 
         if (user.role === 'ADMIN') {
             return [
-                ...baseItems,
                 { name: 'Dashboard', path: '/admin' },
+                { name: 'Browse Items', path: '/browse' },
                 { name: 'Staff Panel', path: '/staff' },
             ];
         }

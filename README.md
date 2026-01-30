@@ -21,7 +21,15 @@ uvicorn main:app --reload
 ```
 API Documentation: http://localhost:8000/docs
 
-### 2. Frontend
+### 2. Seed Demo Data (Optional)
+To populate the database with realistic UIU datasets (Students, Items, Locations):
+```bash
+cd backend
+python seed_db.py
+```
+*Note: This will reset the database and create fresh records.*
+
+### 3. Frontend
 ```bash
 cd frontend
 # Install dependencies

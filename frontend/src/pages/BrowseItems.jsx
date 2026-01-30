@@ -121,7 +121,7 @@ const BrowseItems = () => {
                         <div key={`${item.type}-${item.id}`} className="bg-white rounded-[2.5rem] p-3 shadow-xl shadow-gray-200/40 border border-gray-50 hover:shadow-2xl transition-all duration-500 group">
                             <div className="relative h-64 rounded-[2rem] overflow-hidden mb-6">
                                 <img
-                                    src={item.image_url || `https://placehold.co/600x400/${item.type === 'LOST' ? 'red' : 'orange'}/white?text=${item.title}`}
+                                    src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL}${item.image_url}`) : `https://placehold.co/600x400/${item.type === 'LOST' ? 'red' : 'orange'}/white?text=${item.title}`}
                                     alt={item.title}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                 />

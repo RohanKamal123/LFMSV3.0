@@ -208,8 +208,8 @@ const ClaimFlow = () => {
                                 </div>
                             </div>
 
-                            <button onClick={() => navigate('/browse')} className="btn-primary w-full py-4 text-lg">
-                                Return to Feed
+                            <button onClick={() => navigate('/dashboard?tab=claims')} className="btn-primary w-full py-4 text-lg">
+                                Return to Claims
                             </button>
                         </div>
                     ) : (

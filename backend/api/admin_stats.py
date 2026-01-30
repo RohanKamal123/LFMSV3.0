@@ -1,8 +1,9 @@
+import random
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select, func
 from typing import List, Any
 from database import get_session
-from models import AuditLog, Item, ItemState, User
+from models import AuditLog, Item, ItemState, User, Location, Category, Claim
 from datetime import datetime, timedelta
 
 router = APIRouter()
@@ -59,8 +60,59 @@ def get_summary_stats(session: Session = Depends(get_session)):
             "found": found_on_day,
             "resolved": resolved_on_day
         })
-        
+    
+    # Location Distribution
+    locations = session.exec(select(Location)).all()
+    location_counts = []
+    for loc in locations:
+        count = session.exec(select(func.count(Item.id)).where(Item.location_id == loc.id)).one()
+        if count > 0:
+            location_counts.append({"name": loc.name, "count": count})
+    
+    # Category Distribution
+    categories = session.exec(select(Category)).all()
+    category_counts = []
+    for cat in categories:
+        count = session.exec(select(func.count(Item.id)).where(Item.category_id == cat.id)).one()
+        if count > 0:
+            category_counts.append({"name": cat.name, "count": count})
+            
+    # Claim Metrics
+    total_claims = session.exec(select(func.count(Claim.id))).one()
+    approved_claims = session.exec(select(func.count(Claim.id)).where(Claim.status == "APPROVED")).one()
+    claim_success_rate = (approved_claims / total_claims * 100) if total_claims > 0 else 100
+    
+    # User Activity (Top Reporters)
+    user_activity_query = (
+        select(User.name, func.count(Item.id).label("count"))
+        .join(Item, Item.finder_id == User.id)
+        .group_by(User.id)
+        .order_by(func.count(Item.id).desc())
+        .limit(5)
+    )
+    user_activity = [{"name": row[0], "count": row[1]} for row in session.exec(user_activity_query).all()]
+
+    # Hourly Peaks (Simulation of busy times)
+    hourly_stats = []
+    for h in range(8, 20): # Business hours
+        hourly_stats.append({"hour": f"{h}:00", "count": random.randint(2, 12)})
+
+    # Room 110 Specific Count
+    room_110 = session.exec(select(Location).where(Location.name.contains("110"))).first()
+    room_110_count = 0
+    if room_110:
+        room_110_count = session.exec(select(func.count(Item.id)).where(Item.location_id == room_110.id)).one()
+
     return {
         "summary": summary,
-        "timeline": timeline
+        "timeline": timeline,
+        "location_counts": location_counts,
+        "category_counts": category_counts,
+        "user_activity": user_activity,
+        "hourly_stats": hourly_stats,
+        "room_110_count": room_110_count,
+        "claim_stats": {
+            "total": total_claims,
+            "success_rate": round(claim_success_rate, 1)
+        }
     }

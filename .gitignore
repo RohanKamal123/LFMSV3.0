@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+.env
+
+# Database
+*.db
+backend/database.db
+backend/database_v2.db
+
+# Node
+node_modules/
+frontend/node_modules/
+dist/
+build/
+.eslintcache
+
+# Project Specific
+backend/uploads/
+backend/seed_error.log
+backend/test_database.db
+.gemini/
+.agent/
+.system_generated/
+brain/
+*.log
+*.tmp
+*.bak
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
