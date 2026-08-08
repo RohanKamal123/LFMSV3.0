@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File
 import shutil
 import os
-from datetime import datetime
+import uuid
 
 router = APIRouter()
 
@@ -10,8 +10,8 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/")
 async def upload_image(file: UploadFile = File(...)):
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{timestamp}_{file.filename}"
+    file_ext = os.path.splitext(file.filename or "")[1]
+    filename = f"{uuid.uuid4()}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, filename)
     
     with open(file_path, "wb") as buffer:
