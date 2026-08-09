@@ -82,92 +82,90 @@ const TicketModal = ({ isOpen, onClose, user }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/20">
-                <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-900 text-white">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="card bg-white w-full max-w-lg overflow-hidden">
+                <div className="p-6 border-b border-line flex justify-between items-center bg-ink text-white">
                     <div className="flex items-center gap-3">
-                        <div className="bg-accent p-2 rounded-xl text-white shadow-lg shadow-accent/20">
-                            <LifeBuoy size={20} />
-                        </div>
-                        <h3 className="font-black uppercase tracking-tighter text-xl">Support</h3>
+                        <LifeBuoy size={20} className="text-accent" />
+                        <h3 className="font-display font-bold text-lg">Support</h3>
                     </div>
-                    <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                        <X size={20} />
+                    <button onClick={handleClose} className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
+                        <X size={18} />
                     </button>
                 </div>
 
-                <div className="flex border-b border-gray-100">
+                <div className="flex border-b-2 border-line">
                     <button
                         onClick={() => setTab('new')}
-                        className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-colors ${tab === 'new' ? 'text-primary border-b-2 border-primary' : 'text-gray-400'}`}
+                        className={`flex-1 py-3 text-sm font-semibold border-b-2 -mb-0.5 transition-colors ${tab === 'new' ? 'text-ink border-ink' : 'text-ink/40 border-transparent'}`}
                     >
-                        New Ticket
+                        New ticket
                     </button>
                     <button
                         onClick={() => setTab('mine')}
-                        className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-colors ${tab === 'mine' ? 'text-primary border-b-2 border-primary' : 'text-gray-400'}`}
+                        className={`flex-1 py-3 text-sm font-semibold border-b-2 -mb-0.5 transition-colors ${tab === 'mine' ? 'text-ink border-ink' : 'text-ink/40 border-transparent'}`}
                     >
-                        My Tickets
+                        My tickets
                     </button>
                 </div>
 
-                <div className="p-8 max-h-[60vh] overflow-y-auto">
+                <div className="p-6 max-h-[60vh] overflow-y-auto">
                     {tab === 'new' && (
                         success ? (
-                            <div className="py-6 text-center space-y-4 animate-in zoom-in duration-500">
-                                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-                                    <CheckCircle2 size={40} />
+                            <div className="py-6 text-center space-y-4">
+                                <div className="w-16 h-16 bg-accent/10 text-accent rounded-full flex items-center justify-center mx-auto">
+                                    <CheckCircle2 size={32} />
                                 </div>
-                                <h4 className="text-xl font-black text-gray-900">Ticket Submitted</h4>
-                                <p className="text-sm text-gray-500 font-medium">Staff will review it and respond soon. Check &quot;My Tickets&quot; for updates.</p>
-                                <button onClick={() => setSuccess(false)} className="text-xs font-black text-primary uppercase tracking-widest">Submit Another</button>
+                                <h4 className="font-display text-lg font-bold text-ink">Ticket submitted</h4>
+                                <p className="text-sm text-ink/50">Staff will review it and respond soon. Check &quot;My Tickets&quot; for updates.</p>
+                                <button onClick={() => setSuccess(false)} className="text-sm font-semibold text-primary">Submit another</button>
                             </div>
                         ) : (
-                            <div className="space-y-6">
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Subject</label>
+                                    <label className="eyebrow block mb-2">Subject</label>
                                     <input
                                         type="text"
                                         value={subject}
                                         onChange={(e) => setSubject(e.target.value)}
                                         placeholder="Brief summary of the issue"
-                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 text-sm font-bold text-gray-900 outline-none focus:border-primary transition-all"
+                                        className="input-field"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Category</label>
+                                    <label className="eyebrow block mb-2">Category</label>
                                     <select
                                         value={category}
                                         onChange={(e) => setCategory(e.target.value)}
-                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 text-sm font-bold text-gray-900 outline-none focus:border-primary transition-all appearance-none"
+                                        className="input-field"
                                     >
                                         {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Description</label>
+                                    <label className="eyebrow block mb-2">Description</label>
                                     <textarea
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         rows={4}
                                         placeholder="Describe what happened..."
-                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 text-sm font-medium text-gray-900 outline-none focus:border-primary transition-all resize-none"
+                                        className="input-field resize-none"
                                     />
                                 </div>
 
                                 {error && (
-                                    <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex items-start gap-3">
-                                        <AlertTriangle className="text-red-500 shrink-0" size={18} />
-                                        <p className="text-[11px] text-red-600 font-bold leading-tight">{error}</p>
+                                    <div className="bg-red-50 p-4 rounded-lg border border-red-100 flex items-start gap-3">
+                                        <AlertTriangle className="text-red-500 shrink-0" size={16} />
+                                        <p className="text-sm text-red-600 font-medium">{error}</p>
                                     </div>
                                 )}
 
                                 <button
                                     onClick={handleSubmit}
                                     disabled={loading}
-                                    className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 text-sm disabled:opacity-50"
+                                    className="btn-primary w-full py-3.5"
                                 >
-                                    {loading ? <Loader2 className="animate-spin" /> : 'SUBMIT TICKET'}
+                                    {loading ? <Loader2 className="animate-spin" /> : 'Submit ticket'}
                                 </button>
                             </div>
                         )
@@ -176,24 +174,24 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                     {tab === 'mine' && (
                         <div className="space-y-3">
                             {myTickets.length === 0 && (
-                                <p className="text-center text-sm text-gray-400 font-medium py-10">No tickets yet.</p>
+                                <p className="text-center text-sm text-ink/40 py-10">No tickets yet.</p>
                             )}
                             {myTickets.map(t => (
-                                <div key={t.id} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                                <div key={t.id} className="bg-paper rounded-lg p-4 border border-line">
                                     <div className="flex justify-between items-start gap-3 mb-2">
-                                        <p className="font-black text-gray-900 text-sm">{t.subject}</p>
-                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full border shrink-0 ${STATUS_STYLES[t.status] || STATUS_STYLES.OPEN}`}>
+                                        <p className="font-semibold text-ink text-sm">{t.subject}</p>
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border shrink-0 ${STATUS_STYLES[t.status] || STATUS_STYLES.OPEN}`}>
                                             {t.status}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-gray-500 font-medium mb-2">{t.description}</p>
+                                    <p className="text-xs text-ink/50 mb-2">{t.description}</p>
                                     {t.staff_response && (
-                                        <div className="mt-3 pt-3 border-t border-gray-200 flex items-start gap-2">
+                                        <div className="mt-3 pt-3 divider-dashed flex items-start gap-2">
                                             <LifeBuoy size={14} className="text-accent shrink-0 mt-0.5" />
-                                            <p className="text-xs text-gray-700 font-bold">{t.staff_response}</p>
+                                            <p className="text-xs text-ink/70 font-medium">{t.staff_response}</p>
                                         </div>
                                     )}
-                                    <div className="flex items-center gap-1 mt-2 text-[10px] text-gray-400 font-bold">
+                                    <div className="flex items-center gap-1 mt-2 font-mono text-[10px] text-ink/30">
                                         <Clock size={10} />
                                         {new Date(t.created_at).toLocaleDateString()}
                                     </div>

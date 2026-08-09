@@ -75,17 +75,18 @@ const ReportLost = () => {
 
     return (
         <div className="max-w-xl mx-auto pb-20">
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold text-dark">Report Lost Item</h2>
-                <p className="text-gray-500 text-sm">List an item you&apos;ve misplaced so we can help you find it.</p>
+            <div className="mb-8">
+                <p className="eyebrow mb-2">New report</p>
+                <h2 className="font-display text-3xl font-bold text-ink">Report Lost Item</h2>
+                <p className="text-ink/50 text-sm mt-1">List an item you&apos;ve misplaced so we can help you find it.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
 
                 {/* Section 1: Basic Info */}
-                <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                <section className="card p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Item Title <span className="text-red-500">*</span></label>
+                        <label className="eyebrow block mb-2">Item title <span className="text-primary">*</span></label>
                         <input
                             type="text"
                             name="title"
@@ -99,9 +100,9 @@ const ReportLost = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
+                            <label className="eyebrow block mb-2">Category <span className="text-primary">*</span></label>
                             <div className="relative">
-                                <Tag className="absolute left-3 top-3 text-gray-400" size={16} />
+                                <Tag className="absolute left-3 top-3 text-ink/30" size={16} />
                                 <select
                                     name="category_id"
                                     value={formData.category_id}
@@ -115,9 +116,9 @@ const ReportLost = () => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Location Lost <span className="text-red-500">*</span></label>
+                            <label className="eyebrow block mb-2">Location lost <span className="text-primary">*</span></label>
                             <div className="relative">
-                                <MapPin className="absolute left-3 top-3 text-gray-400" size={16} />
+                                <MapPin className="absolute left-3 top-3 text-ink/30" size={16} />
                                 <select
                                     name="location_id"
                                     value={formData.location_id}
@@ -134,9 +135,9 @@ const ReportLost = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Date Lost</label>
+                            <label className="eyebrow block mb-2">Date lost</label>
                             <div className="relative">
-                                <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
+                                <Calendar className="absolute left-3 top-3 text-ink/30" size={16} />
                                 <input
                                     type="date"
                                     name="date"
@@ -147,7 +148,7 @@ const ReportLost = () => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Estimated Time</label>
+                            <label className="eyebrow block mb-2">Estimated time</label>
                             <input
                                 type="time"
                                 name="time"
@@ -160,13 +161,13 @@ const ReportLost = () => {
                 </section>
 
                 {/* Section 2: Description & Images */}
-                <section className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 space-y-6">
+                <section className="card p-6 space-y-6">
                     <div>
                         <div className="flex items-center gap-2 mb-3">
-                            <label className="block text-sm font-black text-gray-700 uppercase tracking-widest">Detailed Description</label>
+                            <label className="eyebrow">Detailed description</label>
                             <div className="group relative">
                                 <Info size={14} className="text-primary cursor-help" />
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-dark text-white text-[10px] p-3 rounded-2xl hidden group-hover:block z-10 shadow-xl line-clamp-2">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-ink text-white text-[10px] p-3 rounded-lg hidden group-hover:block z-10 shadow-xl">
                                     Include any unique marks, scratches, or identifying features only the owner would know.
                                 </div>
                             </div>
@@ -177,29 +178,29 @@ const ReportLost = () => {
                             onChange={handleChange}
                             rows="4"
                             placeholder="Describe the item in detail..."
-                            className="input-field resize-none bg-gray-50 border-transparent focus:bg-white focus:border-primary transition-all rounded-2xl p-4 font-medium text-sm"
+                            className="input-field resize-none"
                             required
                         ></textarea>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-black text-gray-700 uppercase tracking-widest mb-3">Upload Evidence (Images)</label>
-                        <div className="grid grid-cols-4 gap-4">
+                        <label className="eyebrow block mb-3">Upload evidence (images)</label>
+                        <div className="grid grid-cols-4 gap-3">
                             {images.map((url, i) => (
-                                <div key={i} className="relative aspect-square rounded-2xl overflow-hidden group">
+                                <div key={i} className="relative aspect-square rounded-lg overflow-hidden group border border-line">
                                     <img src={`${API_BASE_URL}${url}`} className="w-full h-full object-cover" />
                                     <button
                                         type="button"
                                         onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))}
-                                        className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-black text-[10px] uppercase"
+                                        className="absolute inset-0 bg-primary/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center font-semibold text-xs"
                                     >
                                         Remove
                                     </button>
                                 </div>
                             ))}
-                            <label className="aspect-square rounded-2xl border-4 border-dashed border-gray-100 hover:border-primary/30 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-primary/5 group">
-                                <Plus size={24} className="text-gray-300 group-hover:text-primary transition-colors" />
-                                <span className="text-[8px] font-black text-gray-400 mt-2 uppercase">Add Image</span>
+                            <label className="aspect-square rounded-lg border-2 border-dashed border-line hover:border-primary/40 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-primary/5 group">
+                                <Plus size={20} className="text-ink/20 group-hover:text-primary transition-colors" />
+                                <span className="text-[10px] font-medium text-ink/40 mt-2">Add image</span>
                                 <input
                                     type="file"
                                     className="hidden"
@@ -222,8 +223,8 @@ const ReportLost = () => {
                     </div>
                 </section>
 
-                <button type="submit" className="w-full btn-primary text-lg">
-                    Submit Lost Report
+                <button type="submit" className="w-full btn-primary py-3.5 text-base">
+                    Submit lost report
                 </button>
 
             </form>

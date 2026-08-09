@@ -108,23 +108,24 @@ const FoundItemForm = () => {
 
     return (
         <div className="max-w-xl mx-auto pb-20">
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold text-dark">Report Found Item</h2>
-                <p className="text-gray-500 text-sm">Help return lost items to their owners.</p>
+            <div className="mb-8">
+                <p className="eyebrow mb-2">New report</p>
+                <h2 className="font-display text-3xl font-bold text-ink">Report Found Item</h2>
+                <p className="text-ink/50 text-sm mt-1">Help return lost items to their owners.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
 
                 {/* Section 1: Image */}
-                <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Item Photo</label>
+                <section className="card p-6">
+                    <label className="eyebrow block mb-3">Item photo</label>
                     <CameraUpload onImageCapture={handleImageCapture} />
                 </section>
 
                 {/* Section 2: Basic Info */}
-                <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                <section className="card p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Item Title <span className="text-red-500">*</span></label>
+                        <label className="eyebrow block mb-2">Item title <span className="text-primary">*</span></label>
                         <input
                             type="text"
                             name="title"
@@ -138,9 +139,9 @@ const FoundItemForm = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
+                            <label className="eyebrow block mb-2">Category <span className="text-primary">*</span></label>
                             <div className="relative">
-                                <Tag className="absolute left-3 top-3 text-gray-400" size={16} />
+                                <Tag className="absolute left-3 top-3 text-ink/30" size={16} />
                                 <select
                                     name="category_id"
                                     value={formData.category_id}
@@ -154,9 +155,9 @@ const FoundItemForm = () => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Location <span className="text-red-500">*</span></label>
+                            <label className="eyebrow block mb-2">Location <span className="text-primary">*</span></label>
                             <div className="relative">
-                                <MapPin className="absolute left-3 top-3 text-gray-400" size={16} />
+                                <MapPin className="absolute left-3 top-3 text-ink/30" size={16} />
                                 <select
                                     name="location_id"
                                     value={formData.location_id}
@@ -173,9 +174,9 @@ const FoundItemForm = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+                            <label className="eyebrow block mb-2">Date</label>
                             <div className="relative">
-                                <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
+                                <Calendar className="absolute left-3 top-3 text-ink/30" size={16} />
                                 <input
                                     type="date"
                                     name="date"
@@ -186,7 +187,7 @@ const FoundItemForm = () => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Time</label>
+                            <label className="eyebrow block mb-2">Time</label>
                             <input
                                 type="time"
                                 name="time"
@@ -199,9 +200,9 @@ const FoundItemForm = () => {
                 </section>
 
                 {/* Section 3: Descriptions */}
-                <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                <section className="card p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Public Description</label>
+                        <label className="eyebrow block mb-2">Public description</label>
                         <textarea
                             name="publicDescription"
                             value={formData.publicDescription}
@@ -214,15 +215,15 @@ const FoundItemForm = () => {
                     </div>
 
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <label className="block text-sm font-semibold text-gray-700">Private Description</label>
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="eyebrow">Private description</label>
                             <div className="group relative">
                                 <Info size={14} className="text-accent cursor-help" />
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-dark text-white text-xs p-2 rounded hidden group-hover:block z-10">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-ink text-white text-xs p-2 rounded hidden group-hover:block z-10">
                                     Used by AI to verify ownership. Describe hidden marks.
                                 </div>
                             </div>
-                            <span className="text-xs text-accent font-medium bg-accent/10 px-2 py-0.5 rounded-full">Crucial for AI</span>
+                            <span className="ref-tag !text-accent !border-accent/30">Crucial for AI</span>
                         </div>
                         <textarea
                             name="privateDescription"
@@ -236,8 +237,8 @@ const FoundItemForm = () => {
                     </div>
                 </section>
 
-                <button type="submit" className="w-full btn-primary text-lg">
-                    Submit Report
+                <button type="submit" className="w-full btn-primary py-3.5 text-base">
+                    Submit report
                 </button>
 
             </form>

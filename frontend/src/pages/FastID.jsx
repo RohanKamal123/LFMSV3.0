@@ -126,60 +126,54 @@ const FastID = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8 font-inter">
+        <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 bg-orange-100 text-primary px-4 py-1.5 rounded-full text-sm font-bold mb-4">
-                    <CreditCard size={18} />
-                    Fast ID Initiative
-                </div>
-                <h1 className="text-4xl font-black text-gray-900 mb-2">Student ID Help Center</h1>
-                <p className="text-gray-500 max-w-lg mx-auto font-medium">
-                    Our AI-powered system helps students recover lost ID cards instantly.
+                <p className="eyebrow text-primary mb-3 inline-flex items-center gap-1.5"><CreditCard size={13} /> Fast ID Initiative</p>
+                <h1 className="font-display text-3xl font-bold text-ink mb-2">Student ID Help Center</h1>
+                <p className="text-ink/50 max-w-lg mx-auto">
+                    An AI-powered system to recover lost ID cards instantly.
                 </p>
             </div>
 
             {/* Tabs */}
-            <div className="flex bg-white p-1 rounded-2xl shadow-sm border mb-8 max-w-md mx-auto">
+            <div className="flex border-b-2 border-line mb-8 max-w-md mx-auto">
                 <button
                     onClick={() => { setActiveTab('found'); setResult(null); setError(null); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'found' ? 'bg-primary text-white shadow-lg shadow-orange-500/30' : 'text-gray-500 hover:bg-gray-50'
-                        }`}
+                    className={`flex-1 py-3 text-sm font-semibold border-b-2 -mb-0.5 transition-all ${activeTab === 'found' ? 'border-ink text-ink' : 'border-transparent text-ink/40'}`}
                 >
-                    I Found an ID
+                    I found an ID
                 </button>
                 <button
                     onClick={() => { setActiveTab('lost'); setResult(null); setError(null); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'lost' ? 'bg-primary text-white shadow-lg shadow-orange-500/30' : 'text-gray-500 hover:bg-gray-50'
-                        }`}
+                    className={`flex-1 py-3 text-sm font-semibold border-b-2 -mb-0.5 transition-all ${activeTab === 'lost' ? 'border-ink text-ink' : 'border-transparent text-ink/40'}`}
                 >
-                    I Lost my ID
+                    I lost my ID
                 </button>
                 <button
                     onClick={() => { setActiveTab('registry'); setResult(null); setError(null); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'registry' ? 'bg-primary text-white shadow-lg shadow-orange-500/30' : 'text-gray-500 hover:bg-gray-50'
-                        }`}
+                    className={`flex-1 py-3 text-sm font-semibold border-b-2 -mb-0.5 transition-all ${activeTab === 'registry' ? 'border-ink text-ink' : 'border-transparent text-ink/40'}`}
                 >
-                    Search Registry
+                    Search registry
                 </button>
             </div>
 
             {/* Content Area */}
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6">
                 {/* Form Section */}
-                <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+                <div className="card p-8">
                     {activeTab === 'found' ? (
-                        <form onSubmit={handleReportFound} className="space-y-6">
+                        <form onSubmit={handleReportFound} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Capture ID Card</label>
+                                <label className="eyebrow block mb-3">Capture ID card</label>
                                 <CameraUpload onImageCapture={(file) => setFoundImageData(file)} />
-                                <p className="text-[10px] text-gray-400 mt-2 font-medium">
+                                <p className="text-xs text-ink/40 mt-2">
                                     AI will automatically read the student ID number from the photo.
                                 </p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Where did you find it?</label>
+                                <label className="eyebrow block mb-2">Where did you find it?</label>
                                 <select
                                     className="input-field"
                                     value={foundLocationId}
@@ -191,7 +185,7 @@ const FastID = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Notes (optional)</label>
+                                <label className="eyebrow block mb-2">Notes (optional)</label>
                                 <textarea
                                     placeholder="Any additional details..."
                                     className="input-field"
@@ -204,34 +198,34 @@ const FastID = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full btn-accent py-4"
+                                className="btn-accent w-full py-3.5"
                             >
-                                {loading ? <Loader2 className="animate-spin" /> : <Search size={20} />}
-                                {loading ? 'Scanning ID...' : 'Scan & Report Found ID'}
+                                {loading ? <Loader2 className="animate-spin" /> : <Search size={16} />}
+                                {loading ? 'Scanning ID...' : 'Scan & report found ID'}
                             </button>
                         </form>
                     ) : activeTab === 'lost' ? (
-                        <form onSubmit={handleReportLost} className="space-y-6">
+                        <form onSubmit={handleReportLost} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Student ID Number</label>
+                                <label className="eyebrow block mb-2">Student ID number</label>
                                 <input
                                     type="text"
                                     placeholder="Enter your 9-10 digit ID"
-                                    className="input-field text-lg font-bold tracking-widest text-center py-4"
+                                    className="input-field font-mono text-lg text-center"
                                     value={lostIDNumber}
                                     onChange={(e) => setLostIDNumber(e.target.value)}
                                     maxLength={10}
                                 />
-                                <p className="text-[10px] text-gray-400 mt-2 font-medium">
-                                    Format: 123 456 789
+                                <p className="text-xs text-ink/40 mt-2">
+                                    Format: 123456789
                                 </p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Message to Finder (Optional)</label>
+                                <label className="eyebrow block mb-2">Message to finder (optional)</label>
                                 <textarea
                                     placeholder="Add any details or contact preferences..."
-                                    className="input-field h-32"
+                                    className="input-field h-28"
                                     value={lostDescription}
                                     onChange={(e) => setLostDescription(e.target.value)}
                                 />
@@ -240,38 +234,36 @@ const FastID = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full btn-primary py-4"
+                                className="btn-primary w-full py-3.5"
                             >
-                                {loading ? <Loader2 className="animate-spin" /> : <ArrowRight size={20} />}
-                                {loading ? 'Processing...' : 'Register Lost Report'}
+                                {loading ? <Loader2 className="animate-spin" /> : <ArrowRight size={16} />}
+                                {loading ? 'Processing...' : 'Register lost report'}
                             </button>
                         </form>
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-5">
                             <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink/30" size={16} />
                                 <input
                                     type="text"
                                     placeholder="Search ID numbers..."
-                                    className="input-field pl-12"
+                                    className="input-field pl-11"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
 
-                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                                 {registry.filter(i => i.id_number.includes(searchQuery)).length === 0 ? (
-                                    <div className="py-12 text-center text-gray-400 font-bold uppercase tracking-widest">No matching IDs found</div>
+                                    <div className="py-12 text-center text-ink/30 font-medium">No matching IDs found</div>
                                 ) : (
                                     registry.filter(i => i.id_number.includes(searchQuery)).map((item, idx) => (
-                                        <div key={idx} className="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100 hover:border-primary/20 transition-all group">
+                                        <div key={idx} className="bg-paper p-4 rounded-lg flex justify-between items-center border border-line">
                                             <div>
-                                                <p className="text-xl font-black text-gray-900 tracking-widest">{item.id_number}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Reported: {new Date(item.created_at).toLocaleDateString()}</p>
+                                                <p className="font-mono text-lg font-semibold text-ink">{item.id_number}</p>
+                                                <p className="text-xs text-ink/40 mt-0.5">Reported {new Date(item.created_at).toLocaleDateString()}</p>
                                             </div>
-                                            <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-sm border
-                                                ${item.type === 'FOUND' ? 'bg-orange-100 text-primary border-orange-200' : 'bg-blue-100 text-blue-600 border-blue-200'}
-                                            `}>
+                                            <span className={`text-[10px] font-mono font-semibold px-2.5 py-1 rounded ${item.type === 'FOUND' ? 'bg-ink text-white' : 'bg-primary text-white'}`}>
                                                 {item.type}
                                             </span>
                                         </div>
@@ -285,53 +277,47 @@ const FastID = () => {
                 {/* Status/Result Section */}
                 <div className="space-y-6">
                     {error && (
-                        <div className="bg-red-50 border border-red-100 p-6 rounded-3xl flex gap-4">
-                            <div className="bg-red-100 text-red-600 p-2 rounded-full h-fit">
-                                <AlertCircle size={20} />
-                            </div>
+                        <div className="bg-red-50 border border-red-100 p-5 rounded-lg flex gap-3">
+                            <AlertCircle size={18} className="text-red-600 shrink-0 mt-0.5" />
                             <div>
-                                <h3 className="font-bold text-red-900">Process Error</h3>
-                                <p className="text-sm text-red-700 font-medium">{error}</p>
+                                <h3 className="font-semibold text-red-900 text-sm">Process error</h3>
+                                <p className="text-sm text-red-700">{error}</p>
                             </div>
                         </div>
                     )}
 
                     {result ? (
-                        <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="bg-green-100 text-green-600 p-2 rounded-full">
-                                    <CheckCircle2 size={24} />
-                                </div>
-                                <h2 className="text-2xl font-black">Reported Successfully</h2>
+                        <div className="card p-8">
+                            <div className="flex items-center gap-3 mb-6 pb-6 divider-dashed">
+                                <CheckCircle2 size={22} className="text-accent" />
+                                <h2 className="font-display text-xl font-bold text-ink">Reported successfully</h2>
                             </div>
 
                             {activeTab === 'found' && (
-                                <div className="space-y-6">
-                                    <div className="bg-gray-50 p-6 rounded-2xl border border-dashed">
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">AI Extracted ID</p>
-                                        <p className="text-3xl font-black text-gray-900">
+                                <div className="space-y-4">
+                                    <div className="bg-paper p-5 rounded-lg border border-dashed border-line">
+                                        <p className="eyebrow mb-1">AI extracted ID</p>
+                                        <p className="font-mono text-2xl font-semibold text-ink">
                                             {result.extracted_id || "Unreadable"}
                                         </p>
                                         {!result.success && (
-                                            <p className="text-xs text-orange-600 font-medium mt-2">
-                                                AI couldn&apos;t extract ID part cleanly. Admin will verify.
+                                            <p className="text-xs text-primary font-medium mt-2">
+                                                AI couldn&apos;t extract ID cleanly &mdash; admin will verify.
                                             </p>
                                         )}
                                     </div>
 
                                     {result.match_found ? (
-                                        <div className="bg-primary/10 border border-primary/20 p-6 rounded-2xl">
-                                            <h3 className="font-black text-primary flex items-center gap-2 mb-2">
-                                                🎉 WE FOUND THE OWNER!
-                                            </h3>
-                                            <p className="text-sm font-medium text-gray-700">
+                                        <div className="bg-primary/5 border border-primary/20 p-5 rounded-lg">
+                                            <h3 className="font-display font-bold text-primary mb-1.5">Owner found</h3>
+                                            <p className="text-sm text-ink/60">
                                                 A student already reported this ID as lost. We&apos;ve notified them and the admin to arrange a return.
                                             </p>
                                         </div>
                                     ) : (
-                                        <div className="bg-gray-50 p-6 rounded-2xl">
-                                            <h3 className="font-bold text-gray-900 mb-2">What happens next?</h3>
-                                            <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                                        <div className="bg-paper p-5 rounded-lg">
+                                            <h3 className="font-semibold text-ink mb-1.5 text-sm">What happens next?</h3>
+                                            <p className="text-sm text-ink/50 leading-relaxed">
                                                 The report is now active. If the student reports it lost later, we&apos;ll match it instantly and notify both of you.
                                             </p>
                                         </div>
@@ -340,26 +326,24 @@ const FastID = () => {
                             )}
 
                             {activeTab === 'lost' && (
-                                <div className="space-y-6">
-                                    <div className="bg-gray-50 p-6 rounded-2xl border border-dashed">
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Registered ID</p>
-                                        <p className="text-3xl font-black text-gray-900">{lostIDNumber}</p>
+                                <div className="space-y-4">
+                                    <div className="bg-paper p-5 rounded-lg border border-dashed border-line">
+                                        <p className="eyebrow mb-1">Registered ID</p>
+                                        <p className="font-mono text-2xl font-semibold text-ink">{lostIDNumber}</p>
                                     </div>
 
                                     {result.match_found ? (
-                                        <div className="bg-teal-50 border border-teal-200 p-6 rounded-2xl">
-                                            <h3 className="font-black text-teal-700 flex items-center gap-2 mb-2">
-                                                ✨ YOUR ID IS SAFE!
-                                            </h3>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Someone already found and reported your ID card! Check your dashboard for details.
+                                        <div className="bg-accent/5 border border-accent/20 p-5 rounded-lg">
+                                            <h3 className="font-display font-bold text-accent mb-1.5">Your ID is safe</h3>
+                                            <p className="text-sm text-ink/60">
+                                                Someone already found and reported your ID card. Check your dashboard for details.
                                             </p>
                                         </div>
                                     ) : (
-                                        <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl">
-                                            <h3 className="font-bold text-blue-900 mb-2">Auto-Search Active</h3>
-                                            <p className="text-sm text-blue-700 font-medium leading-relaxed">
-                                                We are monitoring all incoming found ID reports. You will receive a notification as soon as a match is found.
+                                        <div className="bg-paper p-5 rounded-lg">
+                                            <h3 className="font-semibold text-ink mb-1.5 text-sm">Auto-search active</h3>
+                                            <p className="text-sm text-ink/50 leading-relaxed">
+                                                We are monitoring all incoming found ID reports and will notify you the moment a match is found.
                                             </p>
                                         </div>
                                     )}
@@ -367,12 +351,10 @@ const FastID = () => {
                             )}
                         </div>
                     ) : (
-                        <div className="bg-gray-50 border-2 border-dashed rounded-3xl p-12 flex flex-col items-center justify-center text-center opacity-50">
-                            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                                <Search size={24} className="text-gray-400" />
-                            </div>
-                            <h3 className="font-bold text-gray-400">Status Awaiting Report</h3>
-                            <p className="text-xs text-gray-400 max-w-[200px] mt-2">
+                        <div className="card border-dashed p-12 flex flex-col items-center justify-center text-center">
+                            <Search size={24} className="text-ink/15 mb-4" />
+                            <h3 className="font-semibold text-ink/40 text-sm">Status awaiting report</h3>
+                            <p className="text-xs text-ink/30 max-w-[200px] mt-2">
                                 Your report status and match results will appear here after submission.
                             </p>
                         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { QrCode, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Download, Upload, ScanLine } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertCircle, Loader2, Download, Upload } from 'lucide-react';
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { QRCodeSVG } from 'qrcode.react';
 import { API_BASE_URL } from '../api_config';
@@ -90,7 +90,7 @@ const StaffPanel = () => {
             });
             const data = await res.json();
             if (res.ok) {
-                setResult({ message: "Asset successfully received and registered at Room 110.", item: data.item });
+                setResult({ message: "Item successfully received and registered at Room 110.", item: data.item });
             } else {
                 setError(data.detail || "Intake registration failed.");
             }
@@ -110,7 +110,7 @@ const StaffPanel = () => {
             });
             const data = await res.json();
             if (res.ok) {
-                setResult({ message: `Successfully released asset to ${sessionData.claimant.name}.`, item: data.item });
+                setResult({ message: `Successfully released item to ${sessionData.claimant.name}.`, item: data.item });
             } else {
                 setError(data.detail || "Release verification failed.");
             }
@@ -131,48 +131,38 @@ const StaffPanel = () => {
 
     if (view === 'hub') {
         return (
-            <div className="max-w-4xl mx-auto py-12 px-4 font-inter animate-in fade-in duration-500">
-                <div className="text-center mb-16">
-                    <h2 className="text-5xl font-black text-gray-900 tracking-tighter uppercase mb-4">Command Hub</h2>
-                    <p className="text-gray-500 font-bold uppercase tracking-widest text-sm italic">Room 110 Logistics Terminal</p>
+            <div className="max-w-4xl mx-auto py-8">
+                <div className="mb-12">
+                    <p className="eyebrow mb-2">Room 110 logistics terminal</p>
+                    <h2 className="font-display text-4xl font-bold text-ink">Command Hub</h2>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-6">
                     <button
                         onClick={() => setView('take')}
-                        className="group bg-white p-10 rounded-[3rem] border-4 border-gray-50 shadow-2xl hover:border-primary transition-all text-left relative overflow-hidden"
+                        className="card p-8 hover:border-primary transition-all text-left"
                     >
-                        <div className="relative z-10">
-                            <div className="bg-primary/10 text-primary p-5 rounded-3xl w-fit mb-8 group-hover:scale-110 transition-transform">
-                                <Download size={40} />
-                            </div>
-                            <h3 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">Take Item</h3>
-                            <p className="text-gray-400 font-medium leading-relaxed">
-                                Scanner mode: Scan finder&apos;s asset QR to register intake at Room 110.
-                            </p>
+                        <div className="bg-primary/10 text-primary p-4 rounded-lg w-fit mb-6">
+                            <Download size={28} />
                         </div>
-                        <div className="absolute right-[-10%] bottom-[-10%] opacity-5 text-gray-400 group-hover:scale-125 transition-transform duration-700">
-                            <ScanLine size={200} />
-                        </div>
+                        <h3 className="font-display text-xl font-bold text-ink mb-2">Take Item</h3>
+                        <p className="text-ink/50 text-sm leading-relaxed">
+                            Scanner mode: scan the finder&apos;s item QR to register intake at Room 110.
+                        </p>
                     </button>
 
                     <button
                         onClick={startGiveSession}
                         disabled={loading}
-                        className="group bg-gray-900 p-10 rounded-[3rem] shadow-2xl border-4 border-transparent hover:border-orange-500 transition-all text-left relative overflow-hidden disabled:opacity-50"
+                        className="bg-ink p-8 rounded-xl border border-ink hover:border-primary transition-all text-left disabled:opacity-50"
                     >
-                        <div className="relative z-10 text-white">
-                            <div className="bg-orange-500 text-white p-5 rounded-3xl w-fit mb-8 group-hover:scale-110 transition-transform shadow-xl shadow-orange-500/20">
-                                {loading ? <Loader2 className="animate-spin" size={40} /> : <Upload size={40} />}
-                            </div>
-                            <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tight">Give Item</h3>
-                            <p className="text-gray-500 font-medium leading-relaxed">
-                                Session mode: Show QR for claimant to scan and reveal their approved assets.
-                            </p>
+                        <div className="bg-primary text-white p-4 rounded-lg w-fit mb-6">
+                            {loading ? <Loader2 className="animate-spin" size={28} /> : <Upload size={28} />}
                         </div>
-                        <div className="absolute right-[-10%] bottom-[-10%] opacity-10 text-white group-hover:scale-125 transition-transform duration-700">
-                            <QrCode size={200} />
-                        </div>
+                        <h3 className="font-display text-xl font-bold text-white mb-2">Give Item</h3>
+                        <p className="text-white/50 text-sm leading-relaxed">
+                            Session mode: show a QR for the claimant to scan and reveal their approved items.
+                        </p>
                     </button>
                 </div>
             </div>
@@ -180,87 +170,85 @@ const StaffPanel = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto py-12 px-4 animate-in fade-in slide-in-from-bottom-5 duration-500">
-            <button onClick={reset} className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest mb-8 hover:text-gray-900 transition-colors">
-                <ArrowLeft size={14} /> Back to Terminal
+        <div className="max-w-2xl mx-auto py-8">
+            <button onClick={reset} className="flex items-center gap-2 text-ink/40 font-semibold text-sm mb-6 hover:text-ink transition-colors">
+                <ArrowLeft size={14} /> Back to terminal
             </button>
 
-            <div className={`bg-white rounded-[3rem] p-10 shadow-2xl border-2 ${view === 'take' ? 'border-primary/20' : 'border-orange-500/20'} relative overflow-hidden`}>
-                <div className="flex items-center gap-4 mb-10">
-                    <div className={`p-4 rounded-2xl ${view === 'take' ? 'bg-primary/10 text-primary' : 'bg-orange-500/10 text-orange-500'}`}>
-                        {view === 'take' ? <Download size={24} /> : <Upload size={24} />}
+            <div className={`card p-8 border-t-4 ${view === 'take' ? 'border-t-primary' : 'border-t-accent'}`}>
+                <div className="flex items-center gap-4 mb-8 pb-8 divider-dashed">
+                    <div className={`p-3 rounded-lg ${view === 'take' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'}`}>
+                        {view === 'take' ? <Download size={20} /> : <Upload size={20} />}
                     </div>
                     <div>
-                        <h3 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">{view === 'take' ? 'Asset Intake' : 'Asset Release'}</h3>
-                        <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">{view === 'take' ? 'Scanning Finder Asset' : 'Handover Session Active'}</p>
+                        <h3 className="font-display text-xl font-bold text-ink">{view === 'take' ? 'Item Intake' : 'Item Release'}</h3>
+                        <p className="eyebrow mt-0.5">{view === 'take' ? 'Scanning finder item' : 'Handover session active'}</p>
                     </div>
                 </div>
 
                 {!result ? (
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                         {view === 'take' && (
-                            <div className="space-y-6">
-                                <div id="reader" className="overflow-hidden rounded-3xl border-4 border-dashed border-gray-100 bg-gray-50"></div>
-                                <div className="text-center">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Awaiting Valid QR Scan...</p>
-                                </div>
+                            <div className="space-y-4">
+                                <div id="reader" className="overflow-hidden rounded-lg border border-dashed border-line bg-paper"></div>
+                                <p className="text-center eyebrow">Awaiting valid QR scan</p>
                             </div>
                         )}
 
                         {view === 'give' && (
-                            <div className="space-y-10 text-center">
+                            <div className="space-y-8 text-center">
                                 {!sessionData ? (
-                                    <div className="animate-in fade-in zoom-in duration-700">
-                                        <div className="bg-gray-50 p-10 rounded-[2rem] border-2 border-dashed border-gray-200 inline-block mb-6 shadow-inner">
+                                    <div>
+                                        <div className="bg-paper p-8 rounded-lg border border-dashed border-line inline-block mb-6">
                                             <QRCodeSVG value={`FINDX_SESSION|${sessionToken}`} size={200} level="H" />
                                         </div>
-                                        <h4 className="text-xl font-black text-gray-900 uppercase">Wait for Claimant</h4>
-                                        <p className="text-sm text-gray-400 font-medium mt-2 max-w-xs mx-auto">
-                                            Display this QR to the user. Their verified assets will appear here automatically.
+                                        <h4 className="font-display text-lg font-bold text-ink">Wait for claimant</h4>
+                                        <p className="text-sm text-ink/40 mt-2 max-w-xs mx-auto">
+                                            Display this QR to the user. Their verified items will appear here automatically.
                                         </p>
-                                        <div className="mt-8 flex items-center justify-center gap-2 text-primary animate-pulse">
-                                            <div className="w-2 h-2 bg-primary rounded-full"></div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Polling Secure Session...</span>
+                                        <div className="mt-6 flex items-center justify-center gap-2 text-primary">
+                                            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+                                            <span className="eyebrow text-primary">Polling secure session</span>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="text-left animate-in slide-in-from-right-10 duration-500">
-                                        <div className="bg-orange-50 p-6 rounded-3xl border border-orange-100 mb-8 flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white font-black">
+                                    <div className="text-left">
+                                        <div className="bg-primary/5 p-5 rounded-lg border border-primary/20 mb-6 flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
                                                 {sessionData.claimant.name[0]}
                                             </div>
                                             <div>
-                                                <p className="text-xs font-black text-orange-600 uppercase">Connected Claimant</p>
-                                                <h5 className="text-lg font-black text-gray-900">{sessionData.claimant.name}</h5>
-                                                <p className="text-[10px] font-bold text-gray-400">{sessionData.claimant.uiu_id}</p>
+                                                <p className="eyebrow text-primary mb-0.5">Connected claimant</p>
+                                                <h5 className="font-display font-bold text-ink">{sessionData.claimant.name}</h5>
+                                                <p className="font-mono text-xs text-ink/40">{sessionData.claimant.uiu_id}</p>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-4">
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Item to Release</p>
+                                        <div className="space-y-3">
+                                            <p className="eyebrow">Select item to release</p>
                                             {sessionData.items.length > 0 ? (
                                                 sessionData.items.map(item => (
-                                                    <div key={item.id} className="bg-white border-2 border-gray-100 p-6 rounded-[2rem] hover:border-orange-500 transition-all group shadow-sm">
-                                                        <div className="flex justify-between items-center mb-4">
-                                                            <div className="bg-orange-500/10 text-orange-600 px-3 py-1 rounded-lg text-[10px] font-black">#{item.id}</div>
-                                                            <p className="text-[10px] font-bold text-gray-300">AUTHORIZED</p>
+                                                    <div key={item.id} className="card p-5">
+                                                        <div className="flex justify-between items-center mb-3">
+                                                            <span className="ref-tag">#{item.id}</span>
+                                                            <p className="text-[10px] font-semibold text-accent">AUTHORIZED</p>
                                                         </div>
-                                                        <h6 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tight">{item.title}</h6>
-                                                        <p className="text-sm text-gray-400 line-clamp-2 mb-6">{item.public_description}</p>
+                                                        <h6 className="font-display font-bold text-ink mb-1.5">{item.title}</h6>
+                                                        <p className="text-sm text-ink/50 line-clamp-2 mb-4">{item.public_description}</p>
                                                         <button
                                                             disabled={processing}
                                                             onClick={() => confirmRelease(item.id)}
-                                                            className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                                                            className="btn-ink w-full py-3 text-sm disabled:opacity-50"
                                                         >
-                                                            {processing ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
-                                                            {processing ? 'VERIFYING...' : 'RELEASE ASSET'}
+                                                            {processing ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
+                                                            {processing ? 'Verifying...' : 'Release item'}
                                                         </button>
                                                     </div>
                                                 ))
                                             ) : (
-                                                <div className="p-10 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                                                    <AlertCircle className="mx-auto text-gray-300 mb-4" size={32} />
-                                                    <p className="text-sm font-bold text-gray-400 uppercase">No approved items found in storage queue for this user.</p>
+                                                <div className="card border-dashed p-8 text-center">
+                                                    <AlertCircle className="mx-auto text-ink/20 mb-3" size={28} />
+                                                    <p className="text-sm text-ink/40">No approved items found in storage queue for this user.</p>
                                                 </div>
                                             )}
                                         </div>
@@ -270,28 +258,28 @@ const StaffPanel = () => {
                         )}
 
                         {error && (
-                            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex items-start gap-3">
-                                <AlertCircle className="text-red-500 shrink-0" size={18} />
-                                <p className="text-[11px] text-red-600 font-bold leading-tight">{error}</p>
+                            <div className="bg-red-50 p-4 rounded-lg border border-red-100 flex items-start gap-3">
+                                <AlertCircle className="text-red-500 shrink-0" size={16} />
+                                <p className="text-sm text-red-600 font-medium">{error}</p>
                             </div>
                         )}
                     </div>
                 ) : (
-                    <div className="py-10 text-center space-y-6 animate-in zoom-in duration-500">
-                        <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-green-500/20">
-                            <CheckCircle2 size={48} />
+                    <div className="py-6 text-center space-y-5">
+                        <div className="w-16 h-16 bg-accent/10 text-accent rounded-full flex items-center justify-center mx-auto">
+                            <CheckCircle2 size={32} />
                         </div>
                         <div>
-                            <h4 className="text-2xl font-black text-gray-900">Success</h4>
-                            <p className="text-sm text-gray-500 font-medium mt-2 max-w-xs mx-auto">
+                            <h4 className="font-display text-xl font-bold text-ink">Success</h4>
+                            <p className="text-sm text-ink/50 mt-2 max-w-xs mx-auto">
                                 {result.message}
                             </p>
                         </div>
                         <button
                             onClick={reset}
-                            className="bg-gray-900 text-white font-black px-10 py-4 rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-black/10 hover:bg-black transition-all"
+                            className="btn-ink px-8 py-3 text-sm"
                         >
-                            FINISH OPERATION
+                            Finish operation
                         </button>
                     </div>
                 )}
