@@ -15,17 +15,41 @@ EMBED_DIM = 768
 SIMILARITY_THRESHOLD = 0.20
 
 
+_vec_available = False
+
+
+def is_vec_available() -> bool:
+    return _vec_available
+
+
 def register_vec_extension(engine) -> None:
     """Loads the sqlite-vec extension on every new DBAPI connection this
-    engine opens. Must be called once, right after the engine is created."""
+    engine opens. Must be called once, right after the engine is created.
+
+    Some Python builds (notably Render's default Python buildpack) ship a
+    sqlite3 module compiled without loadable-extension support at all -
+    enable_load_extension() doesn't exist on the connection object, which
+    would otherwise crash the app on startup. Degrade to "semantic
+    matching disabled" instead, same pattern as a missing Gemini key."""
     @event.listens_for(engine, "connect")
     def _load_vec_extension(dbapi_connection, connection_record):
-        dbapi_connection.enable_load_extension(True)
-        sqlite_vec.load(dbapi_connection)
-        dbapi_connection.enable_load_extension(False)
+        global _vec_available
+        try:
+            dbapi_connection.enable_load_extension(True)
+            sqlite_vec.load(dbapi_connection)
+            dbapi_connection.enable_load_extension(False)
+            _vec_available = True
+        except AttributeError:
+            print("sqlite-vec unavailable: this Python's sqlite3 was built without loadable-extension support. Semantic item matching is disabled.")
+            _vec_available = False
+        except Exception as e:
+            print(f"sqlite-vec load failed: {e!r}. Semantic item matching is disabled.")
+            _vec_available = False
 
 
 def ensure_vec_table(engine) -> None:
+    if not _vec_available:
+        return
     with engine.connect() as conn:
         conn.exec_driver_sql(
             f"CREATE VIRTUAL TABLE IF NOT EXISTS item_vec USING vec0("
@@ -54,7 +78,11 @@ def _embed_text(text: str) -> Optional[List[float]]:
 def index_item(session: Session, engine, item_type: str, item_id: int, text: str) -> None:
     """Computes and stores an embedding for a newly created Item/LostItem.
     Best-effort: silently no-ops if the AI call fails (no key, quota, etc)
-    so it never blocks the report-item request that triggered it."""
+    or sqlite-vec isn't available on this platform, so it never blocks the
+    report-item request that triggered it."""
+    if not _vec_available:
+        return
+
     vector = _embed_text(text)
     if vector is None:
         return
@@ -76,7 +104,11 @@ def index_item(session: Session, engine, item_type: str, item_id: int, text: str
 def find_similar(session: Session, engine, text: str, opposite_type: str, k: int = 5) -> List[Tuple[int, float]]:
     """Returns up to k (item_id, distance) pairs of `opposite_type` items
     whose embedding is within SIMILARITY_THRESHOLD of `text`. Best-effort:
-    returns [] on any failure (no key, no rows indexed yet, etc)."""
+    returns [] on any failure (no key, no rows indexed yet, sqlite-vec
+    unavailable on this platform, etc)."""
+    if not _vec_available:
+        return []
+
     vector = _embed_text(text)
     if vector is None:
         return []
