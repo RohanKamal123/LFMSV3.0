@@ -52,22 +52,13 @@ def admin_delete_item(item_id: int, admin_id: int, session: Session = Depends(ge
         raise HTTPException(status_code=404, detail="Item not found")
     
     # Handle related records manually since we might not have cascade delete
-    # 1. Claims
-    from models import Claim, ItemImage, RecoveryOTP, Dispute
-    session.exec(select(Claim).where(Claim.item_id == item_id)).all() # Check if we need to loop
-    
-    # Delete related records
+    from models import Claim, ItemImage
+
     for claim in session.exec(select(Claim).where(Claim.item_id == item_id)).all():
         session.delete(claim)
-    
+
     for image in session.exec(select(ItemImage).where(ItemImage.item_id == item_id)).all():
         session.delete(image)
-        
-    for otp in session.exec(select(RecoveryOTP).where(RecoveryOTP.item_id == item_id)).all():
-        session.delete(otp)
-        
-    for dispute in session.exec(select(Dispute).where(Dispute.item_id == item_id)).all():
-        session.delete(dispute)
 
     session.delete(item)
     session.commit()

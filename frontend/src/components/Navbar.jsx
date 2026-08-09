@@ -1,11 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, UserCircle } from 'lucide-react';
+import { Menu, X, LogOut, UserCircle, LifeBuoy } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import uiuLogo from '../assets/uiu_logo.png';
+import TicketModal from './TicketModal';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [ticketModalOpen, setTicketModalOpen] = useState(false);
     const { user, logout } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
@@ -80,6 +82,13 @@ const Navbar = () => {
 
                         {user && (
                             <div className="flex items-center gap-4 pl-4 border-l ml-4 uppercase">
+                                <button
+                                    onClick={() => setTicketModalOpen(true)}
+                                    className="p-2 text-gray-400 hover:text-accent transition-colors"
+                                    title="Support"
+                                >
+                                    <LifeBuoy size={20} />
+                                </button>
                                 <div className="text-right">
                                     <p className="text-[10px] font-black text-gray-900">{user.name}</p>
                                     <p className="text-[8px] font-bold text-primary">{user.role}</p>
@@ -131,12 +140,19 @@ const Navbar = () => {
                             <UserCircle size={20} className="text-primary" />
                             <span className="text-sm font-bold">{user?.name}</span>
                         </div>
-                        <button onClick={handleLogout} className="flex items-center gap-1 text-sm font-bold text-red-500">
-                            <LogOut size={16} /> Logout
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => { setIsOpen(false); setTicketModalOpen(true); }} className="flex items-center gap-1 text-sm font-bold text-accent">
+                                <LifeBuoy size={16} /> Support
+                            </button>
+                            <button onClick={handleLogout} className="flex items-center gap-1 text-sm font-bold text-red-500">
+                                <LogOut size={16} /> Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
+
+            {user && <TicketModal isOpen={ticketModalOpen} onClose={() => setTicketModalOpen(false)} user={user} />}
         </nav>
     );
 };

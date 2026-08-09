@@ -3,7 +3,7 @@ import {
     BarChart3, Users, Archive, AlertTriangle, ShieldCheck,
     Activity, RefreshCw, Edit3, Trash2, X, CheckCircle2,
     QrCode, Search, TrendingUp, Database, Layers, Eye, UserCheck,
-    Clock, Terminal, Package
+    Clock, Terminal, Package, LifeBuoy, Send
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -19,6 +19,7 @@ const AdminDashboard = () => {
     const [items, setItems] = useState([]);
     const [fastIdItems, setFastIdItems] = useState([]);
     const [loginLogs, setLoginLogs] = useState([]);
+    const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -30,17 +31,19 @@ const AdminDashboard = () => {
 
     const fetchAllData = async () => {
         try {
-            const [statsRes, itemsRes, fidRes, logsRes] = await Promise.all([
+            const [statsRes, itemsRes, fidRes, logsRes, ticketsRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/admin-stats/summary-stats`),
                 fetch(`${API_BASE_URL}/api/admin/items`),
                 fetch(`${API_BASE_URL}/api/fast-id/all-items`),
-                fetch(`${API_BASE_URL}/api/admin-stats/login-logs`)
+                fetch(`${API_BASE_URL}/api/admin-stats/login-logs`),
+                fetch(`${API_BASE_URL}/api/tickets/`)
             ]);
 
             if (statsRes.ok) setStats(await statsRes.json());
             if (itemsRes.ok) setItems(await itemsRes.json());
             if (fidRes.ok) setFastIdItems(await fidRes.json());
             if (logsRes.ok) setLoginLogs(await logsRes.json());
+            if (ticketsRes.ok) setTickets(await ticketsRes.json());
         } catch (err) {
             console.error("Dashboard sync error:", err);
         } finally {
@@ -74,6 +77,7 @@ const AdminDashboard = () => {
         { id: 'inventory_110', label: '110 Inventory', icon: Database, desc: 'Office Storage' },
         { id: 'fast_id', label: 'ID Card CRUD', icon: Users, desc: 'FastID Control' },
         { id: 'flow', label: 'Flow CRUD', icon: Layers, desc: 'Lifecycle Injection' },
+        { id: 'tickets', label: 'Support Tickets', icon: LifeBuoy, desc: 'Help Desk' },
     ];
 
     return (
@@ -130,6 +134,7 @@ const AdminDashboard = () => {
                 {activeTab === 'inventory_110' && <Room110Panel items={items} />}
                 {activeTab === 'fast_id' && <FastIdCrudPanel items={fastIdItems} refresh={fetchAllData} />}
                 {activeTab === 'flow' && <FlowOverridePanel items={items} refresh={fetchAllData} userId={user?.id} />}
+                {activeTab === 'tickets' && <TicketsPanel tickets={tickets} refresh={fetchAllData} userId={user?.id} />}
             </main>
         </div>
     );
@@ -638,6 +643,101 @@ const FlowOverridePanel = ({ items, refresh, userId }) => {
                         ))}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    );
+};
+
+const TICKET_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+
+const TicketsPanel = ({ tickets, refresh, userId }) => {
+    const [replying, setReplying] = useState(null);
+    const [response, setResponse] = useState('');
+    const [status, setStatus] = useState('IN_PROGRESS');
+
+    const handleRespond = async (id) => {
+        const res = await fetch(`${API_BASE_URL}/api/tickets/${id}/respond`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ staff_id: userId, staff_response: response, status })
+        });
+        if (res.ok) { setReplying(null); setResponse(''); refresh(); }
+    };
+
+    return (
+        <div className="bg-white rounded-[4rem] border border-gray-100 shadow-2xl overflow-hidden">
+            <div className="p-10 border-b border-gray-50 flex justify-between items-center bg-teal-600 text-white">
+                <div>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter">Support Help Desk</h3>
+                    <p className="text-[10px] font-bold text-teal-200 uppercase tracking-widest mt-1">Student &amp; Staff Tickets</p>
+                </div>
+                <div className="px-6 py-2 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">
+                    {tickets.filter(t => t.status === 'OPEN').length} Open
+                </div>
+            </div>
+            <div className="divide-y divide-gray-50">
+                {tickets.map(t => (
+                    <div key={t.id} className="p-10 hover:bg-gray-50/50 transition-colors">
+                        <div className="flex justify-between items-start gap-6 mb-4">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className="px-3 py-1 bg-gray-100 rounded-lg text-[9px] font-black text-gray-500 uppercase tracking-widest">{t.category}</span>
+                                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest
+                                        ${t.status === 'OPEN' ? 'bg-orange-50 text-orange-600' :
+                                            t.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-600' :
+                                                t.status === 'RESOLVED' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                                        {t.status}
+                                    </span>
+                                </div>
+                                <h4 className="font-black text-gray-900 uppercase tracking-tight text-lg">{t.subject}</h4>
+                                <p className="text-sm text-gray-500 font-medium mt-1 max-w-2xl">{t.description}</p>
+                            </div>
+                            <div className="text-[10px] font-black text-gray-300 uppercase whitespace-nowrap">
+                                #{t.id} &middot; {new Date(t.created_at).toLocaleDateString()}
+                            </div>
+                        </div>
+
+                        {t.staff_response && (
+                            <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 mb-4 flex gap-3">
+                                <LifeBuoy size={16} className="text-teal-600 shrink-0 mt-0.5" />
+                                <p className="text-sm text-teal-700 font-bold">{t.staff_response}</p>
+                            </div>
+                        )}
+
+                        {replying === t.id ? (
+                            <div className="space-y-3 bg-gray-50 p-6 rounded-2xl border-2 border-gray-100">
+                                <textarea
+                                    className="w-full bg-white border-2 border-gray-100 rounded-xl p-4 text-sm font-medium outline-none focus:border-primary"
+                                    rows={3}
+                                    placeholder="Write a response..."
+                                    value={response}
+                                    onChange={e => setResponse(e.target.value)}
+                                />
+                                <div className="flex justify-between items-center gap-3">
+                                    <select
+                                        className="bg-white border-2 border-gray-100 rounded-xl px-4 py-2 text-xs font-black uppercase outline-none"
+                                        value={status}
+                                        onChange={e => setStatus(e.target.value)}
+                                    >
+                                        {TICKET_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setReplying(null)} className="px-4 py-2 bg-gray-200 text-gray-500 rounded-xl text-xs font-black uppercase">Cancel</button>
+                                        <button onClick={() => handleRespond(t.id)} className="px-4 py-2 bg-teal-600 text-white rounded-xl text-xs font-black uppercase flex items-center gap-2"><Send size={14} /> Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => { setReplying(t.id); setResponse(t.staff_response || ''); setStatus(t.status === 'OPEN' ? 'IN_PROGRESS' : t.status); }}
+                                className="text-xs font-black text-teal-600 uppercase tracking-widest"
+                            >
+                                Respond &rarr;
+                            </button>
+                        )}
+                    </div>
+                ))}
+                {tickets.length === 0 && <div className="p-32 text-center text-gray-300 font-black uppercase tracking-[0.5em] opacity-40">No tickets</div>}
             </div>
         </div>
     );

@@ -34,7 +34,6 @@ class User(SQLModel, table=True):
     email: str
     phone: Optional[str] = None
     role: UserRole = Field(default=UserRole.STUDENT)
-    fraud_score: int = Field(default=0) # 0-100, impacts reputation
     department: Optional[str] = None
     
     items_found: List["Item"] = Relationship(back_populates="finder")
@@ -130,22 +129,31 @@ class QuizAttempt(SQLModel, table=True):
     questions_json: str  # full generate_quiz() output, including correct_index
     created_at: datetime = Field(default_factory=datetime.now)
 
-# --- 8. RecoveryOTP (Path A) ---
-class RecoveryOTP(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    item_id: int = Field(foreign_key="item.id")
-    otp_code: str
-    created_at: datetime = Field(default_factory=datetime.now)
-    is_used: bool = Field(default=False)
+# --- 8. Support Tickets ---
+class TicketCategory(str, Enum):
+    BUG = "BUG"
+    ITEM_ISSUE = "ITEM_ISSUE"
+    ACCOUNT = "ACCOUNT"
+    OTHER = "OTHER"
 
-# --- 9. Dispute (Reclaim Window) ---
-class Dispute(SQLModel, table=True):
+class TicketStatus(str, Enum):
+    OPEN = "OPEN"
+    IN_PROGRESS = "IN_PROGRESS"
+    RESOLVED = "RESOLVED"
+    CLOSED = "CLOSED"
+
+class SupportTicket(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    item_id: int = Field(foreign_key="item.id")
-    filer_id: int = Field(foreign_key="user.id")
-    reason: str
-    status: str = "OPEN" # OPEN, RESOLVED_FRAUD, RESOLVED_DISMISSED
+    user_id: int = Field(foreign_key="user.id")
+    subject: str
+    category: TicketCategory = Field(default=TicketCategory.OTHER)
+    description: str
+    item_id: Optional[int] = Field(default=None, foreign_key="item.id") # optional: ties a ticket to a specific item
+    status: TicketStatus = Field(default=TicketStatus.OPEN)
+    staff_response: Optional[str] = None
+    resolved_by: Optional[int] = Field(default=None, foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.now)
+    resolved_at: Optional[datetime] = None
 
 # --- 10. AuditLog (Security) ---
 class AuditLog(SQLModel, table=True):
