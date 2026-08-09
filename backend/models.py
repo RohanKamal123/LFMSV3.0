@@ -120,8 +120,15 @@ class QuizLog(SQLModel, table=True):
     question_text: str
     answer_text: str
     is_correct: bool
-    
+
     claim: Optional[Claim] = Relationship(back_populates="quiz_logs")
+
+# --- 7b. QuizAttempt (server-side answer key, never sent to the client) ---
+class QuizAttempt(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    item_id: int = Field(foreign_key="item.id")
+    questions_json: str  # full generate_quiz() output, including correct_index
+    created_at: datetime = Field(default_factory=datetime.now)
 
 # --- 8. RecoveryOTP (Path A) ---
 class RecoveryOTP(SQLModel, table=True):

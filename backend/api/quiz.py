@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from typing import List, Dict
+import json
 from database import get_session
-from models import Item, ItemState
+from models import Item, ItemState, QuizAttempt
 from services.gemini import generate_quiz
 
 router = APIRouter()
@@ -12,7 +13,7 @@ async def create_quiz_for_item(item_id: int, session: Session = Depends(get_sess
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
+
     # Only generate quiz for active items
     if item.state != ItemState.ACTIVE and item.state != ItemState.PENDING_HANDOVER:
         # We allow it for flow demo, but ideally skip archived/resolved
@@ -25,8 +26,21 @@ async def create_quiz_for_item(item_id: int, session: Session = Depends(get_sess
         private_desc=item.private_description,
         location=location_name
     )
-    
+
+    # Persist the full question set (with correct answers) server-side only.
+    # The client only ever sees question text + options - never correct_index.
+    attempt = QuizAttempt(item_id=item_id, questions_json=json.dumps(questions))
+    session.add(attempt)
+    session.commit()
+    session.refresh(attempt)
+
+    sanitized_questions = [
+        {"question": q.get("question"), "options": q.get("options")}
+        for q in questions
+    ]
+
     return {
+        "attempt_id": attempt.id,
         "item_title": item.title,
-        "questions": questions
+        "questions": sanitized_questions
     }

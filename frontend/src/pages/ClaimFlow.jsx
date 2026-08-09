@@ -17,6 +17,7 @@ const ClaimFlow = () => {
     const [ownershipInfo, setOwnershipInfo] = useState('');
     const [quizData, setQuizData] = useState([]);
     const [answers, setAnswers] = useState({});
+    const [attemptId, setAttemptId] = useState(null);
 
     useEffect(() => {
         if (itemId) {
@@ -35,6 +36,7 @@ const ClaimFlow = () => {
             });
             const data = await res.json();
             setQuizData(data.questions || []);
+            setAttemptId(data.attempt_id);
             setStep(2);
         } catch (err) {
             console.error(err);
@@ -62,6 +64,7 @@ const ClaimFlow = () => {
                 item_id: parseInt(itemId),
                 claimant_id: user.id,
                 owner_private_info: ownershipInfo,
+                attempt_id: attemptId,
                 quiz_answers: quizAnswers
             };
 
