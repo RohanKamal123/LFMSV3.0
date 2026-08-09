@@ -4,7 +4,8 @@ from typing import List, Optional
 from datetime import datetime
 
 from database import get_session
-from models import SupportTicket, TicketCategory, TicketStatus, User, AuditLog
+from models import SupportTicket, TicketCategory, TicketStatus, User, AuditLog, NotificationType
+from services.notify import send_notification
 
 router = APIRouter()
 
@@ -77,6 +78,16 @@ def respond_to_ticket(ticket_id: int, payload: dict, session: Session = Depends(
         details=f"Staff {staff.name} responded to ticket {ticket_id}, status -> {ticket.status}"
     )
     session.add(log)
+
+    send_notification(
+        session,
+        user_id=ticket.user_id,
+        type=NotificationType.SYSTEM_ALERT,
+        title=f"Ticket Update: {ticket.subject}",
+        message=ticket.staff_response or f"Your ticket status changed to {ticket.status}.",
+        link="/dashboard"
+    )
+
     session.commit()
     session.refresh(ticket)
 

@@ -8,10 +8,11 @@ from datetime import datetime
 
 from database import get_session
 from models import (
-    FastIDItem, FastIDType, FastIDStatus, FastIDMatch, 
+    FastIDItem, FastIDType, FastIDStatus, FastIDMatch,
     Notification, NotificationType, User, UserRole, AuditLog
 )
 from services.id_reader import extract_id_from_image, validate_id_format
+from services.notify import send_notification
 
 router = APIRouter()
 
@@ -93,28 +94,27 @@ async def report_found_id(
             session.add(lost_report)
             
             # Notify Loster (Owner)
-            notification_loster = Notification(
+            send_notification(
+                session,
                 user_id=lost_report.reporter_id,
                 type=NotificationType.FAST_ID_MATCH,
                 title="ID Card Found!",
                 message=f"Your ID card ({extracted_id}) has been found by another student!",
                 link="/dashboard"
             )
-            session.add(notification_loster)
-            
+
             # Notify Admin
-            # Find an admin
             admin = session.exec(select(User).where(User.role == UserRole.ADMIN)).first()
             if admin:
-                notification_admin = Notification(
+                send_notification(
+                    session,
                     user_id=admin.id,
                     type=NotificationType.FAST_ID_MATCH,
                     title="New ID Match",
                     message=f"ID Card {extracted_id} has been matched between users.",
                     link="/admin"
                 )
-                session.add(notification_admin)
-            
+
             match_found = True
             session.commit()
 
@@ -182,26 +182,26 @@ async def report_lost_id(
         session.add(found_report)
         
         # Notify Loster (Self)
-        notification = Notification(
+        send_notification(
+            session,
             user_id=reporter_id,
             type=NotificationType.FAST_ID_MATCH,
             title="ID Card Already Found!",
             message=f"Your ID card ({manual_id}) was already reported as found by someone!",
             link="/dashboard"
         )
-        session.add(notification)
-        
+
         # Notify Admin
         admin = session.exec(select(User).where(User.role == UserRole.ADMIN)).first()
         if admin:
-            notification_admin = Notification(
+            send_notification(
+                session,
                 user_id=admin.id,
                 type=NotificationType.FAST_ID_MATCH,
                 title="New ID Match",
                 message=f"ID Card {manual_id} has been matched immediately on loss report.",
                 link="/admin"
             )
-            session.add(notification_admin)
 
         match_found = True
         session.commit()

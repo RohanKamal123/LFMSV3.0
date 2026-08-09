@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
-from models import Item, ItemState, Notification, NotificationType
+from models import Item, ItemState, NotificationType
+from services.notify import send_notification
 from datetime import datetime, timedelta
 
 def update_stale_items(session: Session):
@@ -24,14 +25,14 @@ def update_stale_items(session: Session):
         
         # Send Late Notification to Finder
         if item.finder_id:
-            notif = Notification(
+            send_notification(
+                session,
                 user_id=item.finder_id,
                 type=NotificationType.SYSTEM_ALERT,
                 title="LATE ALERT: Action Required",
                 message=f"Drop-off deadline exceeded for '{item.title}'. Please return it to Room 110 immediately.",
                 link="/dashboard"
             )
-            session.add(notif)
 
     # 2. RESOLVED -> ARCHIVED (30 days)
     archive_limit = now - timedelta(days=30)
