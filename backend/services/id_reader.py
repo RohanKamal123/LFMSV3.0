@@ -1,4 +1,3 @@
-import google.generativeai as genai
 import os
 import re
 import PIL.Image
@@ -6,17 +5,21 @@ from typing import Optional, Dict, Any
 import cv2
 import numpy as np
 
+from services.ai_client import get_client, MODEL_NAME
+
 async def extract_id_from_image(image_path: str) -> Dict[str, Any]:
     """
     Uses Gemini Vision API to extract student ID.
     Now uses a multi-stage approach for higher accuracy.
     """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        return {"success": False, "error": "Gemini API key not found", "raw_text": "API_KEY_MISSING"}
-
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    client = get_client()
+    if not client:
+        return {
+            "success": False,
+            "error_code": "AI_UNAVAILABLE",
+            "error": "Gemini API key not found",
+            "raw_text": "API_KEY_MISSING",
+        }
 
     prompt = """
     You are an OCR specialist for United International University (UIU). 
@@ -34,7 +37,7 @@ async def extract_id_from_image(image_path: str) -> Dict[str, Any]:
         # STAGE 1: Try Original Image (often best for modern AI)
         print(f"DEBUG: Stage 1 - Processing original image {image_path}")
         img_orig = PIL.Image.open(image_path)
-        response = model.generate_content([prompt, img_orig])
+        response = client.models.generate_content(model=MODEL_NAME, contents=[prompt, img_orig])
         
         extracted_text = response.text.strip() if response and response.text else "NOT_FOUND"
         digits_only = re.sub(r'\D', '', extracted_text)
@@ -60,7 +63,7 @@ async def extract_id_from_image(image_path: str) -> Dict[str, Any]:
             cv2.imwrite(temp_path, adjusted)
             
             img_stage2 = PIL.Image.open(temp_path)
-            response2 = model.generate_content([prompt, img_stage2])
+            response2 = client.models.generate_content(model=MODEL_NAME, contents=[prompt, img_stage2])
             
             # Cleanup
             if os.path.exists(temp_path): os.remove(temp_path)
@@ -74,13 +77,19 @@ async def extract_id_from_image(image_path: str) -> Dict[str, Any]:
         return {
             "success": False,
             "id_number": None,
+            "error_code": "NOT_FOUND",
             "error": "Could not find a valid Student ID",
             "raw_text": extracted_text
         }
 
     except Exception as e:
-        print(f"ERROR: ID Extraction failed: {str(e)}")
-        return {"success": False, "error": str(e), "raw_text": f"EXCEPTION: {str(e)}"}
+        print(f"ID extraction failed (model={MODEL_NAME}): {e!r}")
+        return {
+            "success": False,
+            "error_code": "AI_UNAVAILABLE",
+            "error": str(e),
+            "raw_text": f"EXCEPTION: {str(e)}",
+        }
 
 def validate_id_format(id_str: str) -> bool:
     """Validates if the provided string is a 9-10 digit integer."""

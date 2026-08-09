@@ -1,8 +1,8 @@
-import google.generativeai as genai
-import os
 import json
 import random
 from typing import List, Dict
+
+from services.ai_client import get_client, MODEL_NAME
 
 def generate_quiz_mock(title: str, public_desc: str, private_desc: str, location: str) -> List[Dict]:
     """Fallback mock quiz data - generates challenging similar options."""
@@ -61,26 +61,11 @@ async def generate_quiz(title: str, public_desc: str, private_desc: str, locatio
     """
     Advanced AI quiz generation with challenging, similar options.
     """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    
-    if not api_key:
+    client = get_client()
+    if not client:
         return generate_quiz_mock(title, public_desc, private_desc, location)
 
     try:
-        genai.configure(api_key=api_key)
-        
-        model = None
-        for name in ["gemini-1.5-flash", "gemini-pro"]:
-            try:
-                model = genai.GenerativeModel(name)
-                model.generate_content("test")
-                break
-            except:
-                continue
-        
-        if not model:
-            return generate_quiz_mock(title, public_desc, private_desc, location)
-
         prompt = f"""
 You are a Security Auditor for a University Lost & Found system designing CHALLENGING ownership verification questions.
 
@@ -128,27 +113,27 @@ EXAMPLE OF BAD OPTIONS (NEVER DO THIS):
 
 Generate the quiz now:
 """
-        
-        response = model.generate_content(prompt)
+
+        response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
         text = response.text.strip()
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
             text = text.split("```")[1].split("```")[0].strip()
-            
+
         quiz_data = json.loads(text)
-        
+
         # Shuffle options for each question (keeping track of correct answer)
         for q in quiz_data:
             if "correct_index" in q:
                 correct_answer = q["options"][q["correct_index"]]
                 random.shuffle(q["options"])
                 q["correct_index"] = q["options"].index(correct_answer)
-        
+
         return quiz_data
-        
+
     except Exception as e:
-        print(f"Gemini Generation Error: {str(e)}")
+        print(f"Gemini quiz generation failed (model={MODEL_NAME}): {e!r}")
         return generate_quiz_mock(title, public_desc, private_desc, location)
 
 async def verify_answers(title: str, public_desc: str, private_desc: str, location: str, quiz_answers: List[Dict]) -> List[Dict]:
@@ -156,8 +141,6 @@ async def verify_answers(title: str, public_desc: str, private_desc: str, locati
     Evaluates claimant answers with full item context to ensure accurate judgment
     of both private details and public facts (like location).
     """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    
     def fallback_verify(t, pub, priv, loc, answers):
         results = []
         context_blob = f"{t} {pub} {priv} {loc}".lower()
@@ -166,28 +149,17 @@ async def verify_answers(title: str, public_desc: str, private_desc: str, locati
             # Simple keyword overlap with full context
             is_correct = ans_lower in context_blob or any(word in context_blob for word in ans_lower.split() if len(word) > 3)
             results.append({
-                **q, 
-                "is_correct": is_correct, 
+                **q,
+                "is_correct": is_correct,
                 "reason": "Fallback semantic verification (Full Context)"
             })
         return results
 
-    if not api_key:
+    client = get_client()
+    if not client:
         return fallback_verify(title, public_desc, private_desc, location, quiz_answers)
 
     try:
-        genai.configure(api_key=api_key)
-        model = None
-        for name in ["gemini-1.5-flash", "gemini-pro"]:
-            try:
-                model = genai.GenerativeModel(name)
-                break
-            except:
-                continue
-        
-        if not model:
-            return fallback_verify(title, public_desc, private_desc, location, quiz_answers)
-
         answers_str = json.dumps(quiz_answers)
         prompt = f"""
 OWNERSHIP VERIFICATION JUDGMENT.
@@ -216,16 +188,16 @@ OUTPUT FORMAT (JSON array only):
   {{"question": "...", "answer": "...", "is_correct": true/false, "reason": "Explanation citing the context"}}
 ]
 """
-        
-        response = model.generate_content(prompt)
+
+        response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
         text = response.text.strip()
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
             text = text.split("```")[1].split("```")[0].strip()
-            
+
         return json.loads(text)
-        
+
     except Exception as e:
-        print(f"Gemini Verification Error: {str(e)}")
+        print(f"Gemini answer verification failed (model={MODEL_NAME}): {e!r}")
         return fallback_verify(title, public_desc, private_desc, location, quiz_answers)
