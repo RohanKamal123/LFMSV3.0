@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import List, Optional
-from database import get_session
-from models import Item, ItemState, User, AuditLog
+from database import get_session, engine
+from models import Item, ItemState, User, AuditLog, LostItem, NotificationType
+from services.embeddings import index_item, find_similar
+from services.notify import send_notification
 from datetime import datetime
 
 router = APIRouter()
@@ -10,20 +12,20 @@ router = APIRouter()
 @router.post("/", response_model=Item)
 def create_item(payload: dict, session: Session = Depends(get_session)):
     from models import ItemImage
-    
+
     image_url = payload.pop("image_url", None)
     item = Item(**payload)
-    
+
     # Validate finder
     if item.finder_id:
         finder = session.get(User, item.finder_id)
         if not finder:
             raise HTTPException(status_code=400, detail="Invalid finder_id")
-    
+
     session.add(item)
     session.commit()
     session.refresh(item)
-    
+
     if image_url:
         img_record = ItemImage(
             item_id=item.id,
@@ -32,7 +34,7 @@ def create_item(payload: dict, session: Session = Depends(get_session)):
         )
         session.add(img_record)
         session.commit()
-    
+
     # Audit Log
     log = AuditLog(
         actor_id=item.finder_id or 0,
@@ -42,7 +44,29 @@ def create_item(payload: dict, session: Session = Depends(get_session)):
     )
     session.add(log)
     session.commit()
-    
+
+    # Semantic matching against existing lost reports (best-effort, never
+    # blocks the report - a suggestion only, doesn't touch item.state).
+    category_name = item.category_rel.name if item.category_rel else ""
+    location_name = item.location_rel.name if item.location_rel else ""
+    embedding_text = f"{item.title}. {item.public_description}. Category: {category_name}. Location: {location_name}."
+    index_item(session, engine, "FOUND", item.id, embedding_text)
+
+    matches = find_similar(session, engine, embedding_text, opposite_type="LOST", k=3)
+    for lost_item_id, _distance in matches:
+        lost_item = session.get(LostItem, lost_item_id)
+        if lost_item and lost_item.reporter_id:
+            send_notification(
+                session,
+                user_id=lost_item.reporter_id,
+                type=NotificationType.POSSIBLE_MATCH,
+                title="Possible Match Found",
+                message=f"An item matching your lost report '{lost_item.title}' may have just been found: '{item.title}'. Check Browse Items and file a claim if it's yours.",
+                link="/browse"
+            )
+    if matches:
+        session.commit()
+
     return item
 
 @router.get("/", response_model=List[Item])

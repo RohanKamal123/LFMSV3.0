@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import List
-from database import get_session
-from models import LostItem, LostItemStatus, User, AuditLog
+from database import get_session, engine
+from models import LostItem, LostItemStatus, User, AuditLog, Item, NotificationType
+from services.embeddings import index_item, find_similar
+from services.notify import send_notification
 from datetime import datetime
 
 router = APIRouter()
@@ -51,7 +53,29 @@ def report_lost_item(payload: dict, session: Session = Depends(get_session)):
     )
     session.add(log)
     session.commit()
-    
+
+    # Semantic matching against existing found items (best-effort, never
+    # blocks the report - a suggestion only, doesn't touch any item state).
+    category_name = item.category_rel.name if item.category_rel else ""
+    location_name = item.location_rel.name if item.location_rel else ""
+    embedding_text = f"{item.title}. {item.description}. Category: {category_name}. Location: {location_name}."
+    index_item(session, engine, "LOST", item.id, embedding_text)
+
+    matches = find_similar(session, engine, embedding_text, opposite_type="FOUND", k=3)
+    for found_item_id, _distance in matches:
+        found_item = session.get(Item, found_item_id)
+        if found_item and found_item.finder_id:
+            send_notification(
+                session,
+                user_id=item.reporter_id,
+                type=NotificationType.POSSIBLE_MATCH,
+                title="Possible Match Found",
+                message=f"An already-found item may match what you lost ('{item.title}'). Check Browse Items and file a claim if it's yours.",
+                link="/browse"
+            )
+    if matches:
+        session.commit()
+
     return item
 
 @router.get("/", response_model=List[LostItem])

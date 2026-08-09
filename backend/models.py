@@ -225,11 +225,20 @@ class CVScanResult(SQLModel, table=True):
     confidence_score: float
     timestamp: datetime = Field(default_factory=datetime.now)
 
+# --- 12b. ItemEmbedding (metadata row; the actual vector lives in the
+#     sqlite-vec virtual table "item_vec", keyed by this row's id) ---
+class ItemEmbedding(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    item_type: str  # "FOUND" (Item) or "LOST" (LostItem)
+    item_id: int
+    created_at: datetime = Field(default_factory=datetime.now)
+
 # --- 13. Notifications ---
 class NotificationType(str, Enum):
     FAST_ID_MATCH = "FAST_ID_MATCH"
     CLAIM_UPDATE = "CLAIM_UPDATE"
     SYSTEM_ALERT = "SYSTEM_ALERT"
+    POSSIBLE_MATCH = "POSSIBLE_MATCH"
 
 class Notification(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
