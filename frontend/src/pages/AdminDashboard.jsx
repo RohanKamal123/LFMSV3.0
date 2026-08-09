@@ -239,6 +239,41 @@ const AnalyticsPanel = ({ stats }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Row 3 - Resolution + Staff + Tickets */}
+            <div className="grid lg:grid-cols-3 gap-10">
+                <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-xl">
+                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <Clock size={16} className="text-primary" /> Avg. Time to Resolve
+                    </h3>
+                    <p className="text-4xl font-black text-gray-900">
+                        {stats.avg_resolution_hours != null ? `${stats.avg_resolution_hours}h` : '—'}
+                    </p>
+                </div>
+
+                <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-xl">
+                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <UserCheck size={16} className="text-teal-500" /> Staff Throughput
+                    </h3>
+                    <div className="space-y-2">
+                        {(stats.staff_throughput || []).length === 0 && <p className="text-xs text-gray-300 font-bold">No handovers yet</p>}
+                        {(stats.staff_throughput || []).map((s, i) => (
+                            <div key={i} className="flex justify-between text-xs font-bold text-gray-700">
+                                <span>{s.name}</span>
+                                <span className="text-teal-600">{s.count}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-xl">
+                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <LifeBuoy size={16} className="text-orange-500" /> Ticket Resolution
+                    </h3>
+                    <p className="text-4xl font-black text-gray-900">{stats.ticket_stats?.resolution_rate ?? 100}%</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">{stats.ticket_stats?.resolved ?? 0} / {stats.ticket_stats?.total ?? 0} resolved</p>
+                </div>
+            </div>
         </div>
     );
 };

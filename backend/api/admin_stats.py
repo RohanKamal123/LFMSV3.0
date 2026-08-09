@@ -1,10 +1,11 @@
-import random
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select, func
 from typing import List, Any
 from database import get_session
-from models import AuditLog, Item, ItemState, User, Location, Category, Claim
+from models import AuditLog, Item, ItemState, User, Location, Category, Claim, SupportTicket, TicketStatus
 from datetime import datetime, timedelta
+
+RESOLUTION_ACTIONS = ["HANDOVER_DIRECT", "ROOM_110_PICKUP"]
 
 router = APIRouter()
 
@@ -92,10 +93,45 @@ def get_summary_stats(session: Session = Depends(get_session)):
     )
     user_activity = [{"name": row[0], "count": row[1]} for row in session.exec(user_activity_query).all()]
 
-    # Hourly Peaks (Simulation of busy times)
+    # Hourly Peaks - real distribution of when items were reported found
     hourly_stats = []
     for h in range(8, 20): # Business hours
-        hourly_stats.append({"hour": f"{h}:00", "count": random.randint(2, 12)})
+        count = session.exec(
+            select(func.count(Item.id)).where(func.strftime('%H', Item.found_at) == f"{h:02d}")
+        ).one()
+        hourly_stats.append({"hour": f"{h}:00", "count": count})
+
+    # Time-to-resolution: delta between an item being found and its
+    # HANDOVER_DIRECT/ROOM_110_PICKUP audit log entry
+    resolution_logs = session.exec(
+        select(AuditLog).where(AuditLog.action_type.in_(RESOLUTION_ACTIONS))
+    ).all()
+    resolution_hours = []
+    for log in resolution_logs:
+        item = session.get(Item, log.entity_id)
+        if item:
+            delta_hours = (log.timestamp - item.found_at).total_seconds() / 3600.0
+            if delta_hours >= 0:
+                resolution_hours.append(delta_hours)
+    avg_resolution_hours = round(sum(resolution_hours) / len(resolution_hours), 1) if resolution_hours else None
+
+    # Staff throughput - who's actually completing handovers
+    staff_throughput_query = (
+        select(User.name, func.count(AuditLog.id).label("count"))
+        .join(AuditLog, AuditLog.actor_id == User.id)
+        .where(AuditLog.action_type.in_(RESOLUTION_ACTIONS))
+        .group_by(User.id)
+        .order_by(func.count(AuditLog.id).desc())
+        .limit(5)
+    )
+    staff_throughput = [{"name": row[0], "count": row[1]} for row in session.exec(staff_throughput_query).all()]
+
+    # Ticket metrics
+    total_tickets = session.exec(select(func.count(SupportTicket.id))).one()
+    resolved_tickets = session.exec(
+        select(func.count(SupportTicket.id)).where(SupportTicket.status.in_([TicketStatus.RESOLVED, TicketStatus.CLOSED]))
+    ).one()
+    ticket_resolution_rate = round(resolved_tickets / total_tickets * 100, 1) if total_tickets > 0 else 100
 
     # Room 110 Specific Count
     room_110 = session.exec(select(Location).where(Location.name.contains("110"))).first()
@@ -114,5 +150,12 @@ def get_summary_stats(session: Session = Depends(get_session)):
         "claim_stats": {
             "total": total_claims,
             "success_rate": round(claim_success_rate, 1)
+        },
+        "avg_resolution_hours": avg_resolution_hours,
+        "staff_throughput": staff_throughput,
+        "ticket_stats": {
+            "total": total_tickets,
+            "resolved": resolved_tickets,
+            "resolution_rate": ticket_resolution_rate
         }
     }
