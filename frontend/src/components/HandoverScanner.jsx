@@ -122,7 +122,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, user, items }) =>
                             <div>
                                 <h4 className="text-2xl font-black text-gray-900">Handover Verified!</h4>
                                 <p className="text-sm text-gray-500 font-medium mt-2 max-w-xs mx-auto">
-                                    Item #{selectedItemId} has been successfully resolved. The owner's profile is now updated.
+                                    Item #{selectedItemId} has been successfully resolved. The owner&apos;s profile is now updated.
                                 </p>
                             </div>
                             <button

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import CameraUpload from '../components/CameraUpload';
-import { MapPin, Info, Calendar, User, Tag, Highlighter, ShieldCheck } from 'lucide-react';
+import { MapPin, Info, Calendar, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../api_config';
@@ -53,7 +53,7 @@ const FoundItemForm = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageCapture = (file, previewUrl) => {
+    const handleImageCapture = (file, _previewUrl) => {
         setFormData(prev => ({ ...prev, image: file }));
     };
 

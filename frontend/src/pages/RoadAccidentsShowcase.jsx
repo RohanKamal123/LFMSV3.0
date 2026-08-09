@@ -1,8 +1,7 @@
-import React from 'react';
 import {
     Activity, TrendingUp, Map, Truck, Clock, AlertTriangle,
     BarChart3, PieChart, Layers, ShieldCheck, Microscope,
-    ChevronRight, Github, ExternalLink, Moon, Info
+    Github, ExternalLink, Moon, Info
 } from 'lucide-react';
 
 const StatCard = ({ label, value, icon: Icon, color }) => (
@@ -251,7 +250,7 @@ const RoadAccidentsShowcase = () => {
                     <div className="bg-gradient-to-br from-indigo-900/20 to-transparent border border-gray-800 p-10 rounded-[3.5rem] flex flex-col justify-center">
                         <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-8">Model Performance</h3>
                         <p className="text-lg leading-relaxed text-gray-400 mb-8">
-                            Predicting individual outcomes remains challenging as critical human factors (seatbelt use, emergency response time) aren't captured in the 2,218 records. However, the <span className="text-white italic">pattern identification</span> remains viable for strategic road infrastructure planning.
+                            Predicting individual outcomes remains challenging as critical human factors (seatbelt use, emergency response time) aren&apos;t captured in the 2,218 records. However, the <span className="text-white italic">pattern identification</span> remains viable for strategic road infrastructure planning.
                         </p>
                         <div className="flex gap-4">
                             <div className="bg-white/5 px-6 py-4 rounded-2xl border border-white/5 flex-grow">

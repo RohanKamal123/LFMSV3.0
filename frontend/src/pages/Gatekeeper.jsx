@@ -166,7 +166,7 @@ const Gatekeeper = () => {
 
                 <div className="mb-10">
                     <p className="text-xl font-black text-gray-900 tracking-tight leading-none italic uppercase">
-                        "Lost it at UIU, Find it in FindX"
+                        &quot;Lost it at UIU, Find it in FindX&quot;
                     </p>
                 </div>
 
@@ -226,7 +226,7 @@ const Gatekeeper = () => {
                         disabled={loading}
                         className="w-full bg-gray-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl shadow-black/10 disabled:opacity-50 group"
                     >
-                        {loading ? 'CONNECTING...' : <>LET'S GO <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>}
+                        {loading ? 'CONNECTING...' : <>LET&apos;S GO <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>}
                     </button>
 
                     <div className="pt-8 border-t border-gray-50 flex flex-col gap-4">

@@ -77,7 +77,7 @@ const ReportLost = () => {
         <div className="max-w-xl mx-auto pb-20">
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-dark">Report Lost Item</h2>
-                <p className="text-gray-500 text-sm">List an item you've misplaced so we can help you find it.</p>
+                <p className="text-gray-500 text-sm">List an item you&apos;ve misplaced so we can help you find it.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">

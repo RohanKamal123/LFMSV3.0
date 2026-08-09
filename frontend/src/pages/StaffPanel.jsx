@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Package, QrCode, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Download, Upload, Monitor, ScanLine } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { QrCode, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Download, Upload, ScanLine } from 'lucide-react';
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { QRCodeSVG } from 'qrcode.react';
 import { API_BASE_URL } from '../api_config';
@@ -14,7 +14,6 @@ const StaffPanel = () => {
     const [sessionData, setSessionData] = useState(null);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
-    const scannerRef = useRef(null);
 
     // --- SESSION POLLING (GIVE FLOW) ---
     useEffect(() => {
@@ -56,7 +55,7 @@ const StaffPanel = () => {
                 } catch (err) {
                     setError("Invalid QR: " + err.message);
                 }
-            }, (warn) => {
+            }, (_warn) => {
                 // Silently ignore scan errors
             });
 
@@ -64,6 +63,7 @@ const StaffPanel = () => {
                 scanner.clear().catch(err => console.error("Scanner clear fail", err));
             };
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [view, result, processing]);
 
     const startGiveSession = async () => {
@@ -148,7 +148,7 @@ const StaffPanel = () => {
                             </div>
                             <h3 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tight">Take Item</h3>
                             <p className="text-gray-400 font-medium leading-relaxed">
-                                Scanner mode: Scan finder's asset QR to register intake at Room 110.
+                                Scanner mode: Scan finder&apos;s asset QR to register intake at Room 110.
                             </p>
                         </div>
                         <div className="absolute right-[-10%] bottom-[-10%] opacity-5 text-gray-400 group-hover:scale-125 transition-transform duration-700">

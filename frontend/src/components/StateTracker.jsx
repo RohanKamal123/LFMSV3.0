@@ -1,4 +1,4 @@
-import { Check, Clock, Package, UserCheck, CheckCircle2, Archive } from 'lucide-react';
+import { Check, Clock, Package, UserCheck, CheckCircle2 } from 'lucide-react';
 
 const STATES = [
     { id: 'ACTIVE', label: 'Reported', icon: Package },

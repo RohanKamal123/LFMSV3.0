@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, Tag, Calendar, User, Eye, ArrowRight } from 'lucide-react';
+import { Search, Filter, MapPin, Eye, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../api_config';
 
@@ -19,6 +19,7 @@ const BrowseItems = () => {
 
     useEffect(() => {
         fetchItems();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters]);
 
     const fetchItems = async () => {

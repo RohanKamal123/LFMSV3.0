@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-    ChevronLeft, ChevronRight, Database, Cpu, ShieldCheck,
-    ArrowRight, Package, Share2, Layers, Key, Maximize, UserCheck,
-    Globe, Layout, Search, Bell, History, CheckCircle2, AlertCircle
+    ChevronLeft, ChevronRight, ShieldCheck,
+    ArrowRight, Package, Key, Maximize, UserCheck,
+    Globe, Bell, History, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -214,6 +214,7 @@ def generate_verification_quiz(item_id: int):
         };
         window.addEventListener('keydown', handleKeys);
         return () => window.removeEventListener('keydown', handleKeys);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

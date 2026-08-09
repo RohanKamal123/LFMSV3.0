@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
     BarChart3, Users, Archive, AlertTriangle, ShieldCheck,
-    Activity, RefreshCw, Edit3, Trash2, X, CheckCircle2,
-    QrCode, Search, TrendingUp, Database, Layers, Eye, UserCheck,
+    Edit3, Trash2, X, CheckCircle2,
+    TrendingUp, Database, Layers, Eye, UserCheck,
     Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag
 } from 'lucide-react';
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, BarChart, Bar, Cell
+    XAxis, Tooltip,
+    ResponsiveContainer, BarChart, Bar
 } from 'recharts';
 import { API_BASE_URL } from '../api_config';
 import { useAuth } from '../context/AuthContext';
@@ -824,7 +824,7 @@ const ClaimsReviewPanel = ({ claims, reviews, refresh, userId }) => {
                                         </span>
                                         <span className="text-[10px] font-black text-gray-400 uppercase">Quiz {c.quiz_score}/3</span>
                                     </div>
-                                    <p className="text-sm text-gray-500 font-medium max-w-2xl italic">"{c.owner_private_info}"</p>
+                                    <p className="text-sm text-gray-500 font-medium max-w-2xl italic">&quot;{c.owner_private_info}&quot;</p>
                                 </div>
                             </div>
 

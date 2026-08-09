@@ -1,4 +1,4 @@
-import { CreditCard, Search, ArrowRight, CheckCircle2, AlertCircle, Loader2, Database } from 'lucide-react';
+import { CreditCard, Search, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import CameraUpload from '../components/CameraUpload';
@@ -12,12 +12,17 @@ const FastID = () => {
     const [error, setError] = useState(null);
     const [registry, setRegistry] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [locations, setLocations] = useState([]);
 
     useEffect(() => {
         if (activeTab === 'registry') {
             fetchRegistry();
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        fetch(`${API_BASE_URL}/api/browse/locations`).then(res => res.json()).then(setLocations).catch(() => setLocations([]));
+    }, []);
 
     const fetchRegistry = async () => {
         setLoading(true);
@@ -34,7 +39,7 @@ const FastID = () => {
 
     // Form states
     const [foundImageData, setFoundImageData] = useState(null);
-    const [foundLocation, setFoundLocation] = useState('');
+    const [foundLocationId, setFoundLocationId] = useState('');
     const [foundDescription, setFoundDescription] = useState('');
 
     const [lostIDNumber, setLostIDNumber] = useState('');
@@ -54,7 +59,7 @@ const FastID = () => {
         const formData = new FormData();
         formData.append('file', foundImageData);
         formData.append('reporter_id', user.id);
-        formData.append('location_id', ''); // Optional
+        if (foundLocationId) formData.append('location_id', foundLocationId);
         formData.append('description', foundDescription);
 
         try {
@@ -175,12 +180,24 @@ const FastID = () => {
 
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Where did you find it?</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Cafe, Library 3rd Floor"
+                                <select
                                     className="input-field"
-                                    value={foundLocation}
-                                    onChange={(e) => setFoundLocation(e.target.value)}
+                                    value={foundLocationId}
+                                    onChange={(e) => setFoundLocationId(e.target.value)}
+                                >
+                                    <option value="">Select a location...</option>
+                                    {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Notes (optional)</label>
+                                <textarea
+                                    placeholder="Any additional details..."
+                                    className="input-field"
+                                    rows={2}
+                                    value={foundDescription}
+                                    onChange={(e) => setFoundDescription(e.target.value)}
                                 />
                             </div>
 
@@ -297,7 +314,7 @@ const FastID = () => {
                                         </p>
                                         {!result.success && (
                                             <p className="text-xs text-orange-600 font-medium mt-2">
-                                                AI couldn't extract ID part cleanly. Admin will verify.
+                                                AI couldn&apos;t extract ID part cleanly. Admin will verify.
                                             </p>
                                         )}
                                     </div>
@@ -308,14 +325,14 @@ const FastID = () => {
                                                 🎉 WE FOUND THE OWNER!
                                             </h3>
                                             <p className="text-sm font-medium text-gray-700">
-                                                A student already reported this ID as lost. We've notified them and the admin to arrange a return.
+                                                A student already reported this ID as lost. We&apos;ve notified them and the admin to arrange a return.
                                             </p>
                                         </div>
                                     ) : (
                                         <div className="bg-gray-50 p-6 rounded-2xl">
                                             <h3 className="font-bold text-gray-900 mb-2">What happens next?</h3>
                                             <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                                                The report is now active. If the student reports it lost later, we'll match it instantly and notify both of you.
+                                                The report is now active. If the student reports it lost later, we&apos;ll match it instantly and notify both of you.
                                             </p>
                                         </div>
                                     )}

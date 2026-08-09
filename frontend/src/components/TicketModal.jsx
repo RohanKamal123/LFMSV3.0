@@ -35,6 +35,7 @@ const TicketModal = ({ isOpen, onClose, user }) => {
 
     useEffect(() => {
         if (isOpen && tab === 'mine') loadMyTickets();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, tab]);
 
     if (!isOpen) return null;
@@ -118,7 +119,7 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                                     <CheckCircle2 size={40} />
                                 </div>
                                 <h4 className="text-xl font-black text-gray-900">Ticket Submitted</h4>
-                                <p className="text-sm text-gray-500 font-medium">Staff will review it and respond soon. Check "My Tickets" for updates.</p>
+                                <p className="text-sm text-gray-500 font-medium">Staff will review it and respond soon. Check &quot;My Tickets&quot; for updates.</p>
                                 <button onClick={() => setSuccess(false)} className="text-xs font-black text-primary uppercase tracking-widest">Submit Another</button>
                             </div>
                         ) : (

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-    Bell, BellOff, MessageSquare, Clock, ArrowRight, User,
-    CheckCircle2, CreditCard, QrCode, Package, ExternalLink,
-    AlertCircle, Archive, ShieldCheck, MapPin, X, ScanLine, LayoutDashboard, Search
+    Bell, BellOff, Clock,
+    CheckCircle2, QrCode, Package, ExternalLink,
+    AlertCircle, ShieldCheck, MapPin, X, ScanLine, LayoutDashboard, Search
 } from 'lucide-react';
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +33,7 @@ const Dashboard = () => {
         if (user) {
             fetchData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     // Staff QR Scanner logic
@@ -49,12 +50,13 @@ const Dashboard = () => {
                     scanner.clear();
                     joinStaffSession(token);
                 }
-            }, (err) => { });
+            }, (_err) => { });
 
             return () => {
                 scanner.clear().catch(err => console.error("Scanner clear fail", err));
             };
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isStaffScannerOpen, joining]);
 
     const joinStaffSession = async (token) => {
@@ -252,7 +254,7 @@ const Dashboard = () => {
                                 </div>
                                 <h4 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Handover Scan</h4>
                                 <p className="text-gray-500 text-sm font-medium mb-8 max-w-xs">
-                                    Ready to drop off an item or verify someone else's? Use the universal scanner.
+                                    Ready to drop off an item or verify someone else&apos;s? Use the universal scanner.
                                 </p>
                                 <button
                                     onClick={() => setIsScannerOpen(true)}
@@ -413,7 +415,7 @@ const Dashboard = () => {
                                 <div className="md:col-span-3 py-32 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center">
                                     <Package size={40} className="text-gray-200 mb-4" />
                                     <h4 className="text-2xl font-black text-gray-300 uppercase tracking-tighter">No Item Reports</h4>
-                                    <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">You haven't found any items yet.</p>
+                                    <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">You haven&apos;t found any items yet.</p>
                                 </div>
                             )}
                         </div>
