@@ -55,25 +55,25 @@ const Navbar = () => {
     const navItems = getNavItems();
 
     return (
-        <nav className="bg-white shadow-sm border-b sticky top-0 z-50 font-inter">
+        <nav className="bg-paper/95 backdrop-blur-sm border-b-2 border-ink sticky top-0 z-50">
             <div className="container mx-auto px-4">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <Link to="/browse" className="flex items-center gap-4 group">
-                        <img src={uiuLogo} alt="UIU Logo" className="h-10 object-contain group-hover:scale-105 transition-transform" />
-                        <div className="hidden sm:block border-l-2 border-gray-100 pl-4">
-                            <h1 className="text-xl font-black text-gray-900 leading-none">Find-X</h1>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">UIU System</p>
+                        <img src={uiuLogo} alt="UIU Logo" className="h-9 object-contain" />
+                        <div className="hidden sm:block border-l-2 border-line pl-4">
+                            <h1 className="text-lg font-display font-bold text-ink leading-none">Find&#8209;X</h1>
+                            <p className="eyebrow">UIU Registry</p>
                         </div>
                     </Link>
 
                     {/* Desktop Menu */}
-                    <div className="hidden md:flex items-center space-x-6">
+                    <div className="hidden md:flex items-center space-x-1">
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`text-sm font-bold tracking-tight transition-all hover:text-primary ${location.pathname === item.path ? 'text-primary' : 'text-gray-500'
+                                className={`px-3 py-2 text-sm font-medium transition-all rounded-md ${location.pathname === item.path ? 'text-primary bg-primary/5' : 'text-ink/60 hover:text-ink hover:bg-ink/[0.03]'
                                     }`}
                             >
                                 {item.name}
@@ -81,37 +81,37 @@ const Navbar = () => {
                         ))}
 
                         {user && (
-                            <div className="flex items-center gap-4 pl-4 border-l ml-4 uppercase">
+                            <div className="flex items-center gap-3 pl-4 ml-3 border-l-2 border-line">
                                 <button
                                     onClick={() => setTicketModalOpen(true)}
-                                    className="p-2 text-gray-400 hover:text-accent transition-colors"
+                                    className="p-2 text-ink/40 hover:text-accent transition-colors"
                                     title="Support"
                                 >
-                                    <LifeBuoy size={20} />
+                                    <LifeBuoy size={18} />
                                 </button>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black text-gray-900">{user.name}</p>
-                                    <p className="text-[8px] font-bold text-primary">{user.role}</p>
+                                    <p className="text-xs font-semibold text-ink leading-tight">{user.name}</p>
+                                    <p className="ref-tag !text-[9px] !py-0 mt-0.5">{user.role}</p>
                                 </div>
                                 <button
                                     onClick={handleLogout}
-                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                    className="p-2 text-ink/40 hover:text-primary transition-colors"
                                     title="Logout"
                                 >
-                                    <LogOut size={20} />
+                                    <LogOut size={18} />
                                 </button>
                             </div>
                         )}
                     </div>
 
                     {/* Mobile Menu Button */}
-                    <div className="md:hidden flex items-center gap-4">
-                        {user && <span className="text-[10px] font-black text-primary border border-primary/20 px-2 py-1 rounded">{user.role}</span>}
+                    <div className="md:hidden flex items-center gap-3">
+                        {user && <span className="ref-tag">{user.role}</span>}
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="p-2 text-gray-600 hover:text-primary focus:outline-none bg-gray-50 rounded-lg"
+                            className="p-2 text-ink border border-line rounded-md"
                         >
-                            {isOpen ? <X size={20} /> : <Menu size={20} />}
+                            {isOpen ? <X size={18} /> : <Menu size={18} />}
                         </button>
                     </div>
                 </div>
@@ -119,32 +119,32 @@ const Navbar = () => {
 
             {/* Mobile Menu */}
             {isOpen && (
-                <div className="md:hidden bg-white border-t p-4 space-y-4 shadow-xl">
-                    <div className="space-y-2">
+                <div className="md:hidden bg-white border-t-2 border-ink p-4 space-y-4">
+                    <div className="space-y-1">
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
                                 to={item.path}
                                 onClick={() => setIsOpen(false)}
-                                className={`block px-4 py-3 rounded-xl text-md font-bold ${location.pathname === item.path
-                                    ? 'bg-primary text-white shadow-lg shadow-orange-500/30'
-                                    : 'text-gray-600 hover:bg-gray-50'
+                                className={`block px-4 py-3 rounded-md text-sm font-medium ${location.pathname === item.path
+                                    ? 'bg-ink text-white'
+                                    : 'text-ink/70 hover:bg-ink/[0.04]'
                                     }`}
                             >
                                 {item.name}
                             </Link>
                         ))}
                     </div>
-                    <div className="pt-4 border-t flex justify-between items-center text-gray-900">
+                    <div className="pt-4 divider-dashed flex justify-between items-center text-ink">
                         <div className="flex items-center gap-2">
-                            <UserCircle size={20} className="text-primary" />
-                            <span className="text-sm font-bold">{user?.name}</span>
+                            <UserCircle size={18} className="text-primary" />
+                            <span className="text-sm font-semibold">{user?.name}</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <button onClick={() => { setIsOpen(false); setTicketModalOpen(true); }} className="flex items-center gap-1 text-sm font-bold text-accent">
+                            <button onClick={() => { setIsOpen(false); setTicketModalOpen(true); }} className="flex items-center gap-1 text-sm font-semibold text-accent">
                                 <LifeBuoy size={16} /> Support
                             </button>
-                            <button onClick={handleLogout} className="flex items-center gap-1 text-sm font-bold text-red-500">
+                            <button onClick={handleLogout} className="flex items-center gap-1 text-sm font-semibold text-primary">
                                 <LogOut size={16} /> Logout
                             </button>
                         </div>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,18 +6,51 @@
 
 @layer base {
   body {
-    @apply font-sans bg-gray-50 text-dark;
+    @apply font-sans bg-paper text-ink;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
   }
 }
 
-.btn-primary {
-  @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2;
-}
+@layer components {
+  /* Eyebrow: the ONE place all-caps tracked labels belong - a case-file
+     reference tag, not a decoration slapped on every line of text. */
+  .eyebrow {
+    @apply font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-ink/50;
+  }
 
-.btn-accent {
-  @apply bg-accent text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors shadow-lg font-semibold flex items-center justify-center gap-2;
-}
+  /* Structural card: disciplined radius (not an arbitrary rounded-[3rem]
+     blob), a hairline border doing the work shadows usually do, and a
+     signature clipped corner instead of a uniform round-everywhere look. */
+  .card {
+    @apply bg-white border border-line rounded-xl relative;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  }
 
-.input-field {
-  @apply w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all;
+  /* Ticket-stub divider: a torn/perforated line, an intentional nod to a
+     claim-ticket / manifest aesthetic instead of a plain <hr>. */
+  .divider-dashed {
+    @apply border-t-2 border-dashed border-line;
+  }
+
+  .ref-tag {
+    @apply font-mono text-[11px] font-semibold tracking-wide text-ink/60 bg-ink/[0.04] border border-line px-2 py-0.5 rounded;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 font-semibold;
+  }
+
+  .btn-ink {
+    @apply bg-ink text-white px-5 py-2.5 rounded-lg hover:bg-ink/85 transition-colors flex items-center justify-center gap-2 font-semibold;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors shadow-sm font-semibold flex items-center justify-center gap-2;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-line bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/10 focus:border-ink/30 transition-all;
+  }
 }

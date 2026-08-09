@@ -1,117 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, UserCheck, ShieldAlert, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../api_config';
 import uiuLogo from '../assets/uiu_logo.png';
 
-const ParticleBackground = () => {
-    const canvasRef = useRef(null);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        let animationFrameId;
-
-        let particles = [];
-        const particleCount = 225;
-        const mouse = { x: null, y: null, radius: 150 };
-
-        const resize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
-
-        window.addEventListener('resize', resize);
-        resize();
-
-        window.addEventListener('mousemove', (e) => {
-            mouse.x = e.x;
-            mouse.y = e.y;
-        });
-
-        window.addEventListener('mouseleave', () => {
-            mouse.x = null;
-            mouse.y = null;
-        });
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 1;
-                this.baseX = this.x;
-                this.baseY = this.y;
-                this.density = (Math.random() * 30) + 1;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-            }
-
-            draw() {
-                ctx.fillStyle = '#FF8C00';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.fill();
-            }
-
-            update() {
-                // Natural floating motion
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Wrap around edges
-                if (this.x > canvas.width) this.x = 0;
-                if (this.x < 0) this.x = canvas.width;
-                if (this.y > canvas.height) this.y = 0;
-                if (this.y < 0) this.y = canvas.height;
-
-                // Mouse interaction
-                if (mouse.x != null && mouse.y != null) {
-                    let dx = mouse.x - this.x;
-                    let dy = mouse.y - this.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < mouse.radius) {
-                        const force = (mouse.radius - distance) / mouse.radius;
-                        const directionX = dx / distance;
-                        const directionY = dy / distance;
-                        const pull = force * 0.5;
-
-                        this.x += directionX * pull;
-                        this.y += directionY * pull;
-                    }
-                }
-            }
-        }
-
-        const init = () => {
-            particles = [];
-            for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
-            }
-        };
-
-        const animate = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            animationFrameId = requestAnimationFrame(animate);
-        };
-
-        init();
-        animate();
-
-        return () => {
-            window.removeEventListener('resize', resize);
-            cancelAnimationFrame(animationFrameId);
-        };
-    }, []);
-
-    return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />;
-};
+const ROLES = [
+    { id: 'STUDENT', label: 'Student', icon: GraduationCap },
+    { id: 'STAFF', label: 'Staff', icon: UserCheck },
+    { id: 'ADMIN', label: 'Admin', icon: ShieldAlert },
+];
 
 const Gatekeeper = () => {
     const [uiuId, setUiuId] = useState('');
@@ -154,94 +52,124 @@ const Gatekeeper = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50/30 flex items-center justify-center p-4 font-inter relative overflow-hidden text-gray-900">
-            <ParticleBackground />
+        <div className="min-h-screen flex bg-paper">
+            {/* Left: identity panel */}
+            <div className="hidden lg:flex lg:w-5/12 bg-ink text-white flex-col justify-between p-14 relative overflow-hidden">
+                <div className="absolute inset-0 bg-dot-grid opacity-[0.08]" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)' }}></div>
 
-            <div className="bg-white/80 backdrop-blur-md rounded-[3rem] shadow-2xl p-12 w-full max-w-lg text-center border border-gray-100 relative z-10 animate-in fade-in zoom-in duration-700">
-                <div className="w-full flex flex-col items-center justify-center mx-auto mb-10">
-                    <img src={uiuLogo} alt="United International University" className="h-20 object-contain mb-4 animate-in slide-in-from-top duration-1000" />
-                    <div className="h-px w-12 bg-orange-500/30 mb-4"></div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Authentication Portal</p>
+                <div className="relative z-10 flex items-center gap-3">
+                    <img src={uiuLogo} alt="UIU" className="h-9 object-contain bg-white rounded p-1" />
+                    <span className="eyebrow text-white/50">United International University</span>
                 </div>
 
-                <div className="mb-10">
-                    <p className="text-xl font-black text-gray-900 tracking-tight leading-none italic uppercase">
-                        &quot;Lost it at UIU, Find it in FindX&quot;
+                <div className="relative z-10">
+                    <p className="eyebrow text-primary mb-4">Case Registry &middot; Est. 2026</p>
+                    <h1 className="font-display text-5xl font-bold leading-[1.05] mb-6">
+                        Every lost item<br />has a paper trail.
+                    </h1>
+                    <p className="text-white/50 max-w-sm leading-relaxed">
+                        Find-X logs, verifies, and hands back what UIU loses &mdash; with a quiz-verified
+                        chain of custody for every claim, not just a lost &amp; found box.
                     </p>
                 </div>
 
-                <form onSubmit={handleEnter} className="space-y-8">
-                    <div className="text-left">
-                        <label className="block text-[10px] font-black text-gray-400 mb-4 uppercase tracking-[0.2em] text-center">Identity Role Selection</label>
-                        <div className="grid grid-cols-3 gap-3">
-                            {[
-                                { id: 'STUDENT', label: 'Student', icon: GraduationCap },
-                                { id: 'STAFF', label: 'Staff', icon: UserCheck },
-                                { id: 'ADMIN', label: 'Admin', icon: ShieldAlert },
-                            ].map((r) => (
+                <div className="relative z-10 flex gap-8 font-mono text-xs text-white/40">
+                    <div>
+                        <p className="text-white text-lg font-semibold">Path A</p>
+                        <p>Direct handover</p>
+                    </div>
+                    <div>
+                        <p className="text-white text-lg font-semibold">Path B</p>
+                        <p>Staff-mediated</p>
+                    </div>
+                    <div>
+                        <p className="text-white text-lg font-semibold">AI</p>
+                        <p>Quiz verified</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right: intake form */}
+            <div className="flex-1 flex items-center justify-center p-6">
+                <div className="w-full max-w-md">
+                    <div className="lg:hidden flex items-center gap-3 mb-8">
+                        <img src={uiuLogo} alt="UIU" className="h-10 object-contain" />
+                        <div>
+                            <h1 className="font-display text-xl font-bold text-ink leading-none">Find&#8209;X</h1>
+                            <p className="eyebrow">UIU Registry</p>
+                        </div>
+                    </div>
+
+                    <div className="card p-8">
+                        <p className="eyebrow mb-1">Registry Access</p>
+                        <h2 className="font-display text-2xl font-bold text-ink mb-8">Sign in to continue</h2>
+
+                        <form onSubmit={handleEnter} className="space-y-6">
+                            <div>
+                                <label className="eyebrow block mb-3">Role</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {ROLES.map((r) => (
+                                        <button
+                                            key={r.id}
+                                            type="button"
+                                            onClick={() => setRole(r.id)}
+                                            className={`flex flex-col items-center gap-1.5 py-3 rounded-lg border transition-all ${role === r.id
+                                                ? 'border-ink bg-ink text-white'
+                                                : 'border-line text-ink/40 hover:border-ink/30'
+                                                }`}
+                                        >
+                                            <r.icon size={18} />
+                                            <span className="text-[10px] font-semibold">{r.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="eyebrow block mb-2">Institutional ID</label>
+                                <input
+                                    type="text"
+                                    value={uiuId}
+                                    onChange={(e) => setUiuId(e.target.value)}
+                                    placeholder="011XXXXXXXX"
+                                    className="input-field font-mono text-lg tracking-wide"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="eyebrow block mb-2">Contact</label>
+                                <input
+                                    type="text"
+                                    value={contact}
+                                    onChange={(e) => setContact(e.target.value)}
+                                    placeholder="Email or phone number"
+                                    className="input-field"
+                                    required
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="btn-ink w-full py-3.5 group"
+                            >
+                                {loading ? 'Connecting...' : <>Enter Registry <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" /></>}
+                            </button>
+
+                            <div className="divider-dashed pt-5 flex items-center justify-between">
+                                <p className="font-mono text-[10px] text-ink/30">FX&#8209;LOGIN&#8209;01</p>
                                 <button
-                                    key={r.id}
                                     type="button"
-                                    onClick={() => setRole(r.id)}
-                                    className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all duration-300 ${role === r.id
-                                        ? 'border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/20'
-                                        : 'border-gray-50 bg-gray-50 text-gray-300 hover:border-gray-100'
-                                        }`}
+                                    onClick={() => navigate('/portfolio')}
+                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-orange-700 transition-colors"
                                 >
-                                    <r.icon size={24} className="mb-2" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">{r.label}</span>
+                                    Project presentation <ArrowRight size={12} />
                                 </button>
-                            ))}
-                        </div>
+                            </div>
+                        </form>
                     </div>
-
-                    <div className="text-left space-y-6">
-                        <div>
-                            <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-[0.2em]">Institutional ID</label>
-                            <input
-                                type="text"
-                                value={uiuId}
-                                onChange={(e) => setUiuId(e.target.value)}
-                                placeholder="011XXXXXXXX"
-                                className="w-full px-6 py-5 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all text-xl font-black text-center tracking-widest placeholder:text-gray-200"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-[10px] font-black text-gray-400 mb-2 uppercase tracking-[0.2em]">Contact Verification</label>
-                            <input
-                                type="text"
-                                value={contact}
-                                onChange={(e) => setContact(e.target.value)}
-                                placeholder="Email or Phone Number"
-                                className="w-full px-6 py-5 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all text-sm font-bold placeholder:text-gray-200 text-center"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-gray-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl shadow-black/10 disabled:opacity-50 group"
-                    >
-                        {loading ? 'CONNECTING...' : <>LET&apos;S GO <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>}
-                    </button>
-
-                    <div className="pt-8 border-t border-gray-50 flex flex-col gap-4">
-                        <p className="text-[10px] text-gray-400 uppercase font-black tracking-[0.3em]">
-                            Find-X : A end to end LFMS software
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/portfolio')}
-                            className="inline-flex items-center justify-center gap-2 text-[10px] font-black text-orange-600 uppercase tracking-widest hover:text-orange-700 transition-colors"
-                        >
-                            View Project Presentation <ArrowRight size={12} />
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     );

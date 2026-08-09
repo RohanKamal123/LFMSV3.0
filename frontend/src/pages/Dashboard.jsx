@@ -121,18 +121,18 @@ const Dashboard = () => {
     };
 
     const tabs = [
-        { id: 'hub', label: 'Hub Home', icon: LayoutDashboard, desc: 'Overview & QR' },
-        { id: 'claims', label: 'My Claims', icon: CheckCircle2, desc: 'Active Requests' },
-        { id: 'reports', label: 'My Reports', icon: Package, desc: 'Found Item Logs' },
-        { id: 'timeline', label: 'Timeline', icon: Clock, desc: 'Recent Activity' },
+        { id: 'hub', label: 'Overview', icon: LayoutDashboard },
+        { id: 'claims', label: 'My Claims', icon: CheckCircle2 },
+        { id: 'reports', label: 'My Reports', icon: Package },
+        { id: 'timeline', label: 'Timeline', icon: Clock },
     ];
 
     if (loading) return (
         <div className="min-h-[60vh] flex items-center justify-center">
             <div className="relative">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-primary border-r-2"></div>
+                <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-primary border-r-2"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <Package size={20} className="text-primary animate-pulse" />
+                    <Package size={18} className="text-primary" />
                 </div>
             </div>
         </div>
@@ -142,125 +142,105 @@ const Dashboard = () => {
     const activeReportsNeedingDropoff = foundItems.filter(i => i.state === 'ACTIVE' || i.state === 'PENDING_HANDOVER' || i.state === 'OVERDUE_SUBMISSION');
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 font-inter flex flex-col gap-10 animate-in fade-in duration-500">
+        <div className="max-w-7xl mx-auto flex flex-col gap-8">
 
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
                 <div>
-                    <h2 className="text-6xl font-black text-gray-900 tracking-tighter uppercase leading-none mb-4">Student Hub</h2>
-                    <div className="flex items-center gap-2 group cursor-pointer" onClick={fetchData}>
-                        <div className={`w-3 h-3 rounded-full bg-orange-500 animate-pulse`}></div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Handover Stream</span>
-                    </div>
+                    <p className="eyebrow mb-2">Live handover stream</p>
+                    <h2 className="font-display text-4xl font-bold text-ink">Student Hub</h2>
                 </div>
 
                 {hasApprovedClaims && (
-                    <div className="p-6 bg-green-500/10 rounded-[2.5rem] border border-green-500/20 flex items-center gap-6">
-                        <div className="relative p-2 bg-white rounded-2xl shadow-sm border border-green-100">
-                            <QRCodeSVG value={JSON.stringify({ uiu_id: user.uiu_id, name: user.name })} size={60} />
-                            <div className="absolute -bottom-1 -right-1 bg-green-500 p-1 rounded-lg text-white">
-                                <QrCode size={12} />
-                            </div>
+                    <div className="card px-6 py-4 flex items-center gap-5">
+                        <div className="relative p-1.5 bg-white border border-line rounded-lg">
+                            <QRCodeSVG value={JSON.stringify({ uiu_id: user.uiu_id, name: user.name })} size={56} />
                         </div>
                         <div>
-                            <div className="text-green-600 font-black text-[9px] uppercase tracking-widest mb-1">Claimant ID</div>
-                            <div className="text-3xl font-black text-gray-900 uppercase tracking-tighter leading-none">{user.uiu_id}</div>
-                            <p className="text-[8px] text-gray-500 font-bold uppercase mt-1">Show at Room 110 for pickup</p>
+                            <p className="eyebrow text-accent mb-1">Claimant ID</p>
+                            <p className="font-mono text-2xl font-semibold text-ink leading-none">{user.uiu_id}</p>
+                            <p className="text-xs text-ink/40 font-medium mt-1">Show at Room 110 for pickup</p>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Premium Horizontal Navigation */}
-            <div className="sticky top-20 z-30 bg-white/80 backdrop-blur-xl p-2 rounded-[3rem] border border-gray-100 shadow-xl overflow-x-auto no-scrollbar">
-                <nav className="flex items-center gap-2 min-w-max">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => {
-                                setActiveTab(tab.id);
-                                setSearchParams({ tab: tab.id });
-                            }}
-                            className={`flex items-center gap-4 px-8 py-5 rounded-[2.5rem] transition-all group ${activeTab === tab.id
-                                ? 'bg-gray-900 text-white shadow-2xl shadow-gray-900/40 scale-105'
-                                : 'text-gray-400 hover:bg-gray-50'
-                                }`}
-                        >
-                            <div className={`p-2 rounded-xl ${activeTab === tab.id ? 'bg-primary' : 'bg-gray-100 text-gray-400 group-hover:text-primary transition-colors'}`}>
-                                <tab.icon size={18} />
-                            </div>
-                            <div className="text-left">
-                                <div className="text-[12px] font-black uppercase tracking-tight">{tab.label}</div>
-                                <div className={`text-[8px] font-bold uppercase tracking-widest ${activeTab === tab.id ? 'text-gray-400' : 'text-gray-300'}`}>{tab.desc}</div>
-                            </div>
-                        </button>
-                    ))}
-                </nav>
+            {/* Tab Navigation */}
+            <div className="flex gap-1 border-b-2 border-line overflow-x-auto no-scrollbar">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => {
+                            setActiveTab(tab.id);
+                            setSearchParams({ tab: tab.id });
+                        }}
+                        className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 -mb-0.5 transition-all ${activeTab === tab.id
+                            ? 'border-ink text-ink'
+                            : 'border-transparent text-ink/40 hover:text-ink/70'
+                            }`}
+                    >
+                        <tab.icon size={16} />
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            <main className="animate-in slide-in-from-bottom-12 duration-700">
+            <main>
                 {/* HUB OVERVIEW TAB */}
                 {activeTab === 'hub' && (
-                    <div className="space-y-10">
+                    <div className="space-y-6">
                         {/* Urgent Alert */}
                         {activeReportsNeedingDropoff.length > 0 && (
-                            <div className="bg-red-600 rounded-[3rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-                                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md animate-pulse">
-                                            <AlertCircle size={32} />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">Room 110 Required</h2>
-                                            <p className="text-red-100 font-medium max-w-xl text-sm leading-relaxed">
-                                                You have **{activeReportsNeedingDropoff.length}** item(s) pending drop-off. Please visit security within 72 hours.
-                                            </p>
-                                        </div>
+                            <div className="bg-primary rounded-xl p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="flex items-center gap-4">
+                                    <AlertCircle size={28} className="shrink-0" />
+                                    <div>
+                                        <h2 className="font-display text-lg font-bold mb-0.5">Room 110 drop-off required</h2>
+                                        <p className="text-white/80 text-sm">
+                                            {activeReportsNeedingDropoff.length} item(s) pending drop-off &mdash; please visit security within 72 hours.
+                                        </p>
                                     </div>
-                                    <button onClick={() => setActiveTab('reports')} className="bg-white text-red-600 font-black text-xs px-10 py-4 rounded-2xl shadow-xl hover:scale-105 transition-all uppercase tracking-widest">
-                                        View Pending Items
-                                    </button>
                                 </div>
-                                <div className="absolute right-[-5%] bottom-[-20%] opacity-10 rotate-12">
-                                    <Package size={200} />
-                                </div>
+                                <button onClick={() => setActiveTab('reports')} className="bg-white text-primary font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-white/90 transition-all shrink-0">
+                                    View pending items
+                                </button>
                             </div>
                         )}
 
-                        <div className="grid lg:grid-cols-2 gap-8">
+                        <div className="grid lg:grid-cols-2 gap-6">
                             {/* Welcome Card */}
-                            <div className="bg-gray-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between group">
-                                <div className="relative z-10">
-                                    <h3 className="text-4xl font-black mb-4 tracking-tighter">Welcome Back, <br /><span className="text-primary">{user.name.split(' ')[0]}</span></h3>
-                                    <p className="text-gray-400 text-sm font-medium max-w-sm mb-8">
-                                        Your sector activity is high today. Check your claims or start a new report below.
+                            <div className="bg-ink rounded-xl p-8 text-white flex flex-col justify-between">
+                                <div>
+                                    <p className="eyebrow text-white/40 mb-3">Welcome back</p>
+                                    <h3 className="font-display text-3xl font-bold mb-3">{user.name.split(' ')[0]}</h3>
+                                    <p className="text-white/50 text-sm max-w-sm mb-8">
+                                        Check your claims or start a new report below.
                                     </p>
                                 </div>
-                                <div className="relative z-10 flex items-center gap-4">
-                                    <Link to="/found" className="bg-primary text-white font-black text-xs px-8 py-4 rounded-2xl hover:scale-105 transition-all shadow-xl shadow-primary/20">
-                                        REPORT FOUND
+                                <div className="flex items-center gap-3">
+                                    <Link to="/found" className="btn-primary text-sm">
+                                        Report found
                                     </Link>
-                                    <Link to="/browse" className="bg-white/10 hover:bg-white/20 text-white font-black text-xs px-8 py-4 rounded-2xl border border-white/10 transition-all">
-                                        FIND MY LOST ITEM
+                                    <Link to="/browse" className="bg-white/10 hover:bg-white/20 text-white font-semibold text-sm px-5 py-2.5 rounded-lg border border-white/10 transition-all">
+                                        Find my lost item
                                     </Link>
                                 </div>
-                                <div className="absolute right-[-10%] top-[-10%] w-64 h-64 bg-primary/20 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-1000"></div>
                             </div>
 
                             {/* Action Scanner Card */}
-                            <div className="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-xl flex flex-col items-center justify-center text-center group">
-                                <div className="w-20 h-20 bg-orange-50 text-orange-600 rounded-3xl flex items-center justify-center mb-6 group-hover:rotate-12 transition-transform shadow-lg shadow-orange-500/10">
-                                    <ScanLine size={40} />
+                            <div className="card p-8 flex flex-col items-center justify-center text-center">
+                                <div className="w-14 h-14 bg-accent/10 text-accent rounded-xl flex items-center justify-center mb-5">
+                                    <ScanLine size={28} />
                                 </div>
-                                <h4 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Handover Scan</h4>
-                                <p className="text-gray-500 text-sm font-medium mb-8 max-w-xs">
+                                <h4 className="font-display text-xl font-bold text-ink mb-2">Handover scan</h4>
+                                <p className="text-ink/50 text-sm mb-6 max-w-xs">
                                     Ready to drop off an item or verify someone else&apos;s? Use the universal scanner.
                                 </p>
                                 <button
                                     onClick={() => setIsScannerOpen(true)}
-                                    className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary transition-all shadow-xl"
+                                    className="btn-ink w-full py-3"
                                 >
-                                    Launch QR Scanner
+                                    Launch QR scanner
                                 </button>
                             </div>
                         </div>
@@ -269,86 +249,71 @@ const Dashboard = () => {
 
                 {/* MY CLAIMS TAB */}
                 {activeTab === 'claims' && (
-                    <div className="space-y-8">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">My Active Claims</h2>
-                                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Tracking {claims.length} claim requests</p>
-                            </div>
-                            <div className="bg-green-500/10 text-green-600 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/20">
-                                Verified Status: Online
-                            </div>
+                    <div className="space-y-6">
+                        <div>
+                            <h2 className="font-display text-2xl font-bold text-ink">My Claims</h2>
+                            <p className="eyebrow mt-1">{claims.length} tracked</p>
                         </div>
 
-                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
+                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {claims.map((claim) => (
-                                <div key={claim.id} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group overflow-hidden flex flex-col">
-                                    <div className="relative h-56 group-hover:h-64 transition-all duration-700">
+                                <div key={claim.id} className="card overflow-hidden flex flex-col">
+                                    <div className="relative h-44 border-b border-line">
                                         <img
-                                            src={claim.item?.image_url || `https://placehold.co/600x400/teal/white?text=${claim.item?.title}`}
+                                            src={claim.item?.image_url || `https://placehold.co/600x400/161311/f7f3ec?text=${claim.item?.title}`}
                                             alt={claim.item?.title}
-                                            className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+                                            className="w-full h-full object-cover"
                                         />
-                                        <div className="absolute top-4 left-4 flex gap-2">
-                                            <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-tighter border-2 bg-white/90 backdrop-blur-sm ${getStatusStyle(claim.item?.state || claim.status)}`}>
-                                                {claim.item?.state || claim.status}
-                                            </span>
-                                        </div>
+                                        <span className={`absolute top-3 left-3 text-[10px] font-semibold px-2.5 py-1 rounded border ${getStatusStyle(claim.item?.state || claim.status)}`}>
+                                            {claim.item?.state || claim.status}
+                                        </span>
                                     </div>
 
-                                    <div className="p-8 flex-1 flex flex-col">
-                                        <div className="mb-6">
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">CLAIM #{claim.id}</p>
-                                            <h4 className="text-2xl font-black text-gray-900 uppercase leading-none mb-4 group-hover:text-primary transition-colors">
-                                                {claim.item?.title || `Security Item #ID${claim.item_id}`}
-                                            </h4>
+                                    <div className="p-6 flex-1 flex flex-col">
+                                        <p className="ref-tag inline-block w-fit mb-2">CLAIM #{claim.id}</p>
+                                        <h4 className="font-display text-lg font-bold text-ink mb-4">
+                                            {claim.item?.title || `Item #${claim.item_id}`}
+                                        </h4>
 
-                                            <div className="flex items-center gap-4 py-4 border-y border-gray-50 mb-4">
-                                                <div className="text-center flex-1">
-                                                    <div className="text-[8px] text-gray-400 font-bold uppercase mb-0.5">Quiz Score</div>
-                                                    <div className="text-lg font-black text-gray-900">{claim.quiz_score}/3</div>
-                                                </div>
-                                                <div className="w-px h-8 bg-gray-100"></div>
-                                                <div className="text-center flex-1">
-                                                    <div className="text-[8px] text-gray-400 font-bold uppercase mb-0.5">Verification</div>
-                                                    <div className="text-lg font-black text-green-500">{claim.is_verified ? 'PASS' : 'HOLD'}</div>
-                                                </div>
+                                        <div className="flex items-center gap-4 py-3 divider-dashed border-b mb-4">
+                                            <div className="text-center flex-1">
+                                                <p className="text-[10px] text-ink/40 font-medium mb-0.5">Quiz score</p>
+                                                <p className="text-lg font-semibold text-ink">{claim.quiz_score}/3</p>
+                                            </div>
+                                            <div className="w-px h-8 bg-line"></div>
+                                            <div className="text-center flex-1">
+                                                <p className="text-[10px] text-ink/40 font-medium mb-0.5">Verification</p>
+                                                <p className={`text-lg font-semibold ${claim.is_verified ? 'text-accent' : 'text-primary'}`}>{claim.is_verified ? 'Pass' : 'Hold'}</p>
                                             </div>
                                         </div>
 
-                                        <div className="mt-auto space-y-4">
+                                        <div className="mt-auto">
                                             {(claim.status === 'APPROVED' || claim.is_verified) ? (
-                                                <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-start gap-3">
-                                                    <ShieldCheck size={16} className="text-green-600 mt-0.5" />
-                                                    <p className="text-[10px] text-green-700 font-bold leading-tight uppercase tracking-tight">
-                                                        Verification Successful: Show your Hub QR at Room 110 for pickup.
+                                                <div className="bg-accent/5 p-3 rounded-lg border border-accent/20 flex items-start gap-2.5">
+                                                    <ShieldCheck size={15} className="text-accent mt-0.5 shrink-0" />
+                                                    <p className="text-xs text-accent/90 font-medium leading-snug">
+                                                        Verified &mdash; show your Hub QR at Room 110 for pickup.
                                                     </p>
                                                 </div>
                                             ) : (
-                                                <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex items-start gap-3">
-                                                    <Clock size={16} className="text-orange-600 mt-0.5" />
-                                                    <p className="text-[10px] text-orange-700 font-bold leading-tight uppercase tracking-tight">
-                                                        Claim Pending Review: Our team is auditing your verification score.
+                                                <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 flex items-start gap-2.5">
+                                                    <Clock size={15} className="text-primary mt-0.5 shrink-0" />
+                                                    <p className="text-xs text-primary/90 font-medium leading-snug">
+                                                        Pending review &mdash; verification score is being audited.
                                                     </p>
                                                 </div>
                                             )}
-
-                                            <button className="w-full py-4 rounded-2xl border-2 border-gray-900 text-gray-900 font-black text-[10px] uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all">
-                                                View Claim Audit
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             ))}
                             {claims.length === 0 && (
-                                <div className="md:col-span-3 py-32 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center">
-                                    <div className="p-6 bg-white rounded-full shadow-sm mb-6">
-                                        <Search size={40} className="text-gray-200" />
-                                    </div>
-                                    <h4 className="text-2xl font-black text-gray-300 uppercase tracking-tighter">No Active Claims</h4>
-                                    <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2 px-10">Start by finding your item in the browse section.</p>
-                                    <Link to="/browse" className="mt-8 bg-primary text-white font-black text-xs px-10 py-4 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-                                        BROWSE ITEMS
+                                <div className="md:col-span-3 card border-dashed py-24 flex flex-col items-center justify-center text-center">
+                                    <Search size={36} className="text-ink/15 mb-4" />
+                                    <h4 className="font-display text-xl font-bold text-ink/40">No active claims</h4>
+                                    <p className="text-ink/40 text-sm mt-1 px-10">Start by finding your item in the browse section.</p>
+                                    <Link to="/browse" className="btn-primary mt-6 text-sm">
+                                        Browse items
                                     </Link>
                                 </div>
                             )}
@@ -358,64 +323,62 @@ const Dashboard = () => {
 
                 {/* MY REPORTS TAB */}
                 {activeTab === 'reports' && (
-                    <div className="space-y-8">
-                        <div className="flex items-center justify-between">
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
                             <div>
-                                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Reported Assets</h2>
-                                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Managing {foundItems.length + fastIdReports.length} logs</p>
+                                <h2 className="font-display text-2xl font-bold text-ink">Reported Items</h2>
+                                <p className="eyebrow mt-1">{foundItems.length + fastIdReports.length} logs</p>
                             </div>
                             <button
                                 onClick={() => setIsScannerOpen(true)}
-                                className="bg-gray-900 text-white font-black text-[10px] px-8 py-3 rounded-2xl shadow-xl uppercase tracking-widest hover:bg-primary transition-colors flex items-center gap-2"
+                                className="btn-ink text-sm"
                             >
-                                <QrCode size={16} /> Handover Scanner
+                                <QrCode size={15} /> Handover scanner
                             </button>
                         </div>
 
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {[...foundItems, ...fastIdReports].map((item) => (
-                                <div key={item.id} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden flex flex-col">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <span className={`text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter border-2 ${getStatusStyle(item.state || item.status)}`}>
+                                <div key={item.id} className="card p-6 flex flex-col">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <span className={`text-[10px] font-semibold px-2.5 py-1 rounded border ${getStatusStyle(item.state || item.status)}`}>
                                             {item.state || item.status}
                                         </span>
-                                        <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">ID: #{item.id}</p>
+                                        <span className="ref-tag">#{item.id}</span>
                                     </div>
 
-                                    <h4 className="text-xl font-black text-gray-900 mb-2 truncate group-hover:text-primary transition-colors uppercase tracking-tight">
+                                    <h4 className="font-display text-lg font-bold text-ink mb-2 truncate">
                                         {item.title || `Student ID: ${item.extracted_id || item.manual_id}`}
                                     </h4>
-                                    <p className="text-gray-500 text-[10px] font-medium leading-relaxed mb-6 line-clamp-2">
-                                        {item.description || "System log generated via automated sector report."}
+                                    <p className="text-ink/50 text-sm leading-relaxed mb-4 line-clamp-2">
+                                        {item.description || "System log generated via automated report."}
                                     </p>
 
                                     {(item.state === 'ACTIVE' || item.state === 'PENDING_HANDOVER' || item.state === 'OVERDUE_SUBMISSION') && (
-                                        <div className={`p-5 rounded-2xl mb-6 border-2 ${item.state === 'OVERDUE_SUBMISSION' ? 'bg-red-50 border-red-100 animate-pulse' : 'bg-orange-50 border-orange-100'}`}>
-                                            <p className={`text-[10px] ${item.state === 'OVERDUE_SUBMISSION' ? 'text-red-700' : 'text-orange-700'} font-black leading-tight flex items-start gap-2 uppercase tracking-tight`}>
-                                                <AlertCircle size={14} className="shrink-0" />
-                                                Action Required: Room 110 Handover
+                                        <div className={`p-3 rounded-lg mb-4 border ${item.state === 'OVERDUE_SUBMISSION' ? 'bg-red-50 border-red-100' : 'bg-primary/5 border-primary/20'}`}>
+                                            <p className={`text-xs ${item.state === 'OVERDUE_SUBMISSION' ? 'text-red-700' : 'text-primary/90'} font-medium flex items-start gap-2`}>
+                                                <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                                                Action required: Room 110 handover
                                             </p>
                                         </div>
                                     )}
 
-                                    <div className="mt-auto flex items-center justify-between pt-6 border-t border-gray-50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-gray-50 rounded-xl text-gray-400">
-                                                <MapPin size={16} />
-                                            </div>
-                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">UIU Sector Log</p>
+                                    <div className="mt-auto flex items-center justify-between pt-4 divider-dashed">
+                                        <div className="flex items-center gap-2 text-ink/40">
+                                            <MapPin size={14} />
+                                            <p className="text-xs font-medium">UIU sector log</p>
                                         </div>
-                                        <button className="w-10 h-10 bg-gray-50 text-gray-400 rounded-xl hover:bg-primary hover:text-white transition-all flex items-center justify-center">
-                                            <ExternalLink size={18} />
+                                        <button className="w-8 h-8 text-ink/30 hover:text-primary transition-all flex items-center justify-center">
+                                            <ExternalLink size={16} />
                                         </button>
                                     </div>
                                 </div>
                             ))}
                             {(foundItems.length + fastIdReports.length) === 0 && (
-                                <div className="md:col-span-3 py-32 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center">
-                                    <Package size={40} className="text-gray-200 mb-4" />
-                                    <h4 className="text-2xl font-black text-gray-300 uppercase tracking-tighter">No Item Reports</h4>
-                                    <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">You haven&apos;t found any items yet.</p>
+                                <div className="md:col-span-3 card border-dashed py-24 flex flex-col items-center justify-center text-center">
+                                    <Package size={36} className="text-ink/15 mb-4" />
+                                    <h4 className="font-display text-xl font-bold text-ink/40">No item reports</h4>
+                                    <p className="text-ink/40 text-sm mt-1">You haven&apos;t reported any items yet.</p>
                                 </div>
                             )}
                         </div>
@@ -424,62 +387,52 @@ const Dashboard = () => {
 
                 {/* TIMELINE TAB */}
                 {activeTab === 'timeline' && (
-                    <div className="max-w-4xl mx-auto py-10">
-                        <div className="bg-white rounded-[3rem] p-12 border border-gray-100 shadow-xl overflow-hidden relative">
-                            <div className="flex items-center justify-between mb-12">
-                                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Activity Stream</h2>
+                    <div className="max-w-3xl mx-auto">
+                        <div className="card p-8">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="font-display text-2xl font-bold text-ink">Activity Timeline</h2>
                                 {notifications.filter(n => !n.is_read).length > 0 && (
-                                    <span className="bg-primary text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg">
-                                        {notifications.filter(n => !n.is_read).length} NEW
+                                    <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                        {notifications.filter(n => !n.is_read).length} new
                                     </span>
                                 )}
                             </div>
 
-                            <div className="space-y-12 relative z-10">
+                            <div className="space-y-6">
                                 {notifications.map((notif) => (
                                     <div
                                         key={notif.id}
                                         onClick={() => markAsRead(notif.id)}
-                                        className={`relative pl-12 transition-all transition-all duration-500 cursor-pointer group ${notif.is_read ? 'opacity-40 grayscale' : ''}`}
+                                        className={`relative pl-10 cursor-pointer group ${notif.is_read ? 'opacity-50' : ''}`}
                                     >
-                                        {/* Timeline Connector */}
-                                        <div className="absolute left-[13px] top-8 bottom-[-48px] w-0.5 bg-gray-100 last:hidden"></div>
-
-                                        {/* Activity Icon */}
-                                        <div className={`absolute left-0 top-1 w-7 h-7 rounded-full border-4 border-white shadow-xl flex items-center justify-center group-hover:scale-125 transition-transform ${notif.type === 'SYSTEM_ALERT' ? 'bg-red-500' : 'bg-primary'
+                                        <div className={`absolute left-0 top-1 w-5 h-5 rounded-full flex items-center justify-center ${notif.type === 'SYSTEM_ALERT' ? 'bg-primary' : 'bg-accent'
                                             }`}>
-                                            <Bell size={12} className="text-white" />
+                                            <Bell size={10} className="text-white" />
                                         </div>
 
-                                        <div className="bg-gray-50/50 p-6 rounded-3xl border border-transparent group-hover:border-primary/20 group-hover:bg-white transition-all">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                                                    {new Date(notif.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        <div className="pb-6 divider-dashed group-last:border-0 group-last:pb-0">
+                                            <div className="flex justify-between items-start mb-1.5">
+                                                <p className="font-mono text-[10px] text-ink/40">
+                                                    {new Date(notif.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                 </p>
-                                                <div className="text-[8px] font-black text-gray-300 uppercase letter-spacing-[0.2em]">Live Notification</div>
                                             </div>
-                                            <h4 className={`text-xl font-black mb-2 transition-colors uppercase tracking-tight ${notif.is_read ? 'text-gray-500' : 'text-gray-900'} group-hover:text-primary`}>
+                                            <h4 className={`font-display text-base font-bold mb-1 ${notif.is_read ? 'text-ink/50' : 'text-ink'} group-hover:text-primary transition-colors`}>
                                                 {notif.title}
                                             </h4>
-                                            <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-2xl">
+                                            <p className="text-sm text-ink/50 leading-relaxed">
                                                 {notif.message}
                                             </p>
                                         </div>
                                     </div>
                                 ))}
                                 {notifications.length === 0 && (
-                                    <div className="text-center py-20">
-                                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                            <BellOff size={32} className="text-gray-200" />
-                                        </div>
-                                        <h4 className="text-2xl font-black text-gray-300 uppercase tracking-tighter">Quiet Day</h4>
-                                        <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">No system pings or active alerts.</p>
+                                    <div className="text-center py-16">
+                                        <BellOff size={32} className="text-ink/15 mx-auto mb-4" />
+                                        <h4 className="font-display text-lg font-bold text-ink/40">Quiet day</h4>
+                                        <p className="text-ink/40 text-sm mt-1">No system pings or active alerts.</p>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Background decoration */}
-                            <div className="absolute right-[-10%] top-[-5%] w-96 h-96 bg-gray-50 rounded-full blur-[100px] -z-10"></div>
                         </div>
                     </div>
                 )}
@@ -487,21 +440,19 @@ const Dashboard = () => {
 
             {/* Verification Modals */}
             {isStaffScannerOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[4rem] p-12 w-full max-w-xl shadow-2xl animate-in zoom-in-95 duration-500 relative">
-                        <button onClick={() => setIsStaffScannerOpen(false)} className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full transition-colors">
-                            <X size={24} className="text-gray-400" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="card bg-white p-8 w-full max-w-xl relative">
+                        <button onClick={() => setIsStaffScannerOpen(false)} className="absolute top-6 right-6 p-2 hover:bg-ink/5 rounded-full transition-colors">
+                            <X size={20} className="text-ink/40" />
                         </button>
-                        <div className="text-center mb-8">
-                            <h3 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Pickup Vault Entry</h3>
-                            <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] mt-2">Scanning Room 110 Terminal QR</p>
+                        <div className="mb-6">
+                            <p className="eyebrow mb-1">Room 110 terminal</p>
+                            <h3 className="font-display text-2xl font-bold text-ink">Pickup vault entry</h3>
                         </div>
-                        <div id="staff-reader" className="overflow-hidden rounded-[3rem] border-8 border-gray-50 bg-gray-50 mb-8 aspect-square"></div>
-                        <div className="p-6 bg-orange-50 rounded-3xl border border-orange-100 flex items-center gap-4">
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-orange-600 shadow-sm">
-                                <QrCode size={24} />
-                            </div>
-                            <p className="text-[11px] text-orange-800 font-bold uppercase leading-tight tracking-tight">
+                        <div id="staff-reader" className="overflow-hidden rounded-lg border border-line bg-paper mb-6 aspect-square"></div>
+                        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex items-center gap-3">
+                            <QrCode size={20} className="text-primary shrink-0" />
+                            <p className="text-xs text-ink/70 font-medium leading-tight">
                                 Aim your camera at the screen shown by the security officer to complete the handover.
                             </p>
                         </div>
