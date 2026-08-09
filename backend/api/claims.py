@@ -3,7 +3,8 @@ from sqlmodel import Session, select
 from typing import List, Optional
 import json
 from database import get_session
-from models import Claim, Item, ItemState, User, QuizLog, QuizAttempt
+from models import Claim, Item, ItemState, User, QuizLog, QuizAttempt, ClaimReview
+from services.claim_agent import review_claim
 from datetime import datetime
 
 router = APIRouter()
@@ -77,7 +78,31 @@ async def create_claim(claim_data: dict, session: Session = Depends(get_session)
 
     session.commit()
     session.refresh(new_claim)
+
+    # Agentic second opinion for staff review - best-effort, never blocks
+    # or alters the deterministic decision above.
+    try:
+        review_claim(session, new_claim.id)
+    except Exception as e:
+        print(f"Claim review agent errored for claim {new_claim.id}: {e!r}")
+
     return new_claim
+
+@router.get("/reviews")
+def list_claim_reviews(session: Session = Depends(get_session)):
+    """Returns the latest agentic review per claim, keyed by claim_id, for the staff review UI."""
+    reviews = session.exec(select(ClaimReview).order_by(ClaimReview.created_at.desc())).all()
+    result = {}
+    for r in reviews:
+        if r.claim_id not in result:
+            result[r.claim_id] = {
+                "recommendation": r.recommendation,
+                "confidence": r.confidence,
+                "reasoning": r.reasoning,
+                "flags": json.loads(r.flags_json) if r.flags_json else [],
+                "created_at": r.created_at,
+            }
+    return result
 
 @router.get("/")
 def read_claims(claimant_id: Optional[int] = None, session: Session = Depends(get_session)):

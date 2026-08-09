@@ -129,6 +129,17 @@ class QuizAttempt(SQLModel, table=True):
     questions_json: str  # full generate_quiz() output, including correct_index
     created_at: datetime = Field(default_factory=datetime.now)
 
+# --- 7c. ClaimReview (agentic second opinion; never overrides the
+#     deterministic auto-approve/reject decision - assistive only) ---
+class ClaimReview(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    claim_id: int = Field(foreign_key="claim.id")
+    recommendation: str  # APPROVE, REJECT, NEEDS_HUMAN_REVIEW
+    confidence: float
+    reasoning: str
+    flags_json: str = "[]"
+    created_at: datetime = Field(default_factory=datetime.now)
+
 # --- 8. Support Tickets ---
 class TicketCategory(str, Enum):
     BUG = "BUG"

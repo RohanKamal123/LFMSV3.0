@@ -3,7 +3,7 @@ import {
     BarChart3, Users, Archive, AlertTriangle, ShieldCheck,
     Activity, RefreshCw, Edit3, Trash2, X, CheckCircle2,
     QrCode, Search, TrendingUp, Database, Layers, Eye, UserCheck,
-    Clock, Terminal, Package, LifeBuoy, Send
+    Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -20,6 +20,8 @@ const AdminDashboard = () => {
     const [fastIdItems, setFastIdItems] = useState([]);
     const [loginLogs, setLoginLogs] = useState([]);
     const [tickets, setTickets] = useState([]);
+    const [claims, setClaims] = useState([]);
+    const [claimReviews, setClaimReviews] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -31,12 +33,14 @@ const AdminDashboard = () => {
 
     const fetchAllData = async () => {
         try {
-            const [statsRes, itemsRes, fidRes, logsRes, ticketsRes] = await Promise.all([
+            const [statsRes, itemsRes, fidRes, logsRes, ticketsRes, claimsRes, reviewsRes] = await Promise.all([
                 fetch(`${API_BASE_URL}/api/admin-stats/summary-stats`),
                 fetch(`${API_BASE_URL}/api/admin/items`),
                 fetch(`${API_BASE_URL}/api/fast-id/all-items`),
                 fetch(`${API_BASE_URL}/api/admin-stats/login-logs`),
-                fetch(`${API_BASE_URL}/api/tickets/`)
+                fetch(`${API_BASE_URL}/api/tickets/`),
+                fetch(`${API_BASE_URL}/api/admin/claims`),
+                fetch(`${API_BASE_URL}/api/claims/reviews`)
             ]);
 
             if (statsRes.ok) setStats(await statsRes.json());
@@ -44,6 +48,8 @@ const AdminDashboard = () => {
             if (fidRes.ok) setFastIdItems(await fidRes.json());
             if (logsRes.ok) setLoginLogs(await logsRes.json());
             if (ticketsRes.ok) setTickets(await ticketsRes.json());
+            if (claimsRes.ok) setClaims(await claimsRes.json());
+            if (reviewsRes.ok) setClaimReviews(await reviewsRes.json());
         } catch (err) {
             console.error("Dashboard sync error:", err);
         } finally {
@@ -78,6 +84,7 @@ const AdminDashboard = () => {
         { id: 'fast_id', label: 'ID Card CRUD', icon: Users, desc: 'FastID Control' },
         { id: 'flow', label: 'Flow CRUD', icon: Layers, desc: 'Lifecycle Injection' },
         { id: 'tickets', label: 'Support Tickets', icon: LifeBuoy, desc: 'Help Desk' },
+        { id: 'claims', label: 'Claims Review', icon: Bot, desc: 'Agentic Second Opinion' },
     ];
 
     return (
@@ -135,6 +142,7 @@ const AdminDashboard = () => {
                 {activeTab === 'fast_id' && <FastIdCrudPanel items={fastIdItems} refresh={fetchAllData} />}
                 {activeTab === 'flow' && <FlowOverridePanel items={items} refresh={fetchAllData} userId={user?.id} />}
                 {activeTab === 'tickets' && <TicketsPanel tickets={tickets} refresh={fetchAllData} userId={user?.id} />}
+                {activeTab === 'claims' && <ClaimsReviewPanel claims={claims} reviews={claimReviews} refresh={fetchAllData} userId={user?.id} />}
             </main>
         </div>
     );
@@ -773,6 +781,83 @@ const TicketsPanel = ({ tickets, refresh, userId }) => {
                     </div>
                 ))}
                 {tickets.length === 0 && <div className="p-32 text-center text-gray-300 font-black uppercase tracking-[0.5em] opacity-40">No tickets</div>}
+            </div>
+        </div>
+    );
+};
+
+const RECOMMENDATION_STYLES = {
+    APPROVE: 'bg-green-50 text-green-600 border-green-100',
+    REJECT: 'bg-red-50 text-red-600 border-red-100',
+    NEEDS_HUMAN_REVIEW: 'bg-orange-50 text-orange-600 border-orange-100',
+};
+
+const ClaimsReviewPanel = ({ claims, reviews, refresh, userId }) => {
+    const setStatus = async (claimId, status) => {
+        const res = await fetch(`${API_BASE_URL}/api/admin/claims/${claimId}?status=${status}&admin_id=${userId || 1}`, { method: 'PUT' });
+        if (res.ok) refresh();
+    };
+
+    return (
+        <div className="bg-white rounded-[4rem] border border-gray-100 shadow-2xl overflow-hidden">
+            <div className="p-10 border-b border-gray-50 flex justify-between items-center bg-indigo-600 text-white">
+                <div>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3">
+                        <Bot size={28} /> Agentic Claim Review
+                    </h3>
+                    <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mt-1">
+                        AI second opinion &middot; does not auto-decide claims, staff has final say
+                    </p>
+                </div>
+            </div>
+            <div className="divide-y divide-gray-50">
+                {claims.map(c => {
+                    const review = reviews[c.id];
+                    return (
+                        <div key={c.id} className="p-10 hover:bg-gray-50/50 transition-colors">
+                            <div className="flex justify-between items-start gap-6 mb-4">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="px-3 py-1 bg-gray-100 rounded-lg text-[9px] font-black text-gray-500 uppercase tracking-widest">Claim #{c.id}</span>
+                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${c.status === 'APPROVED' ? 'bg-green-50 text-green-600' : c.status === 'REJECTED' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'}`}>
+                                            {c.status}
+                                        </span>
+                                        <span className="text-[10px] font-black text-gray-400 uppercase">Quiz {c.quiz_score}/3</span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 font-medium max-w-2xl italic">"{c.owner_private_info}"</p>
+                                </div>
+                            </div>
+
+                            {review ? (
+                                <div className={`rounded-2xl p-5 border-2 ${RECOMMENDATION_STYLES[review.recommendation] || RECOMMENDATION_STYLES.NEEDS_HUMAN_REVIEW}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Bot size={16} />
+                                        <span className="text-xs font-black uppercase tracking-widest">{review.recommendation}</span>
+                                        <span className="text-[10px] font-bold opacity-70">({Math.round(review.confidence * 100)}% confidence)</span>
+                                    </div>
+                                    <p className="text-sm font-bold mb-2">{review.reasoning}</p>
+                                    {review.flags?.length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            {review.flags.map((f, i) => (
+                                                <span key={i} className="flex items-center gap-1 px-2 py-1 bg-white/60 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                                    <Flag size={10} /> {f}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-gray-300 font-black uppercase tracking-widest">No agent review available</p>
+                            )}
+
+                            <div className="flex gap-2 mt-4">
+                                <button onClick={() => setStatus(c.id, 'APPROVED')} className="px-4 py-2 bg-green-500 text-white rounded-xl text-xs font-black uppercase">Approve</button>
+                                <button onClick={() => setStatus(c.id, 'REJECTED')} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-black uppercase">Reject</button>
+                            </div>
+                        </div>
+                    );
+                })}
+                {claims.length === 0 && <div className="p-32 text-center text-gray-300 font-black uppercase tracking-[0.5em] opacity-40">No claims</div>}
             </div>
         </div>
     );
