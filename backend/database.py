@@ -1,7 +1,13 @@
+import os
 from sqlmodel import SQLModel, create_engine, Session
 from typing import Generator
 
-sqlite_file_name = "database_v2.db"
+# DATA_DIR lets a deployment point the SQLite file at a persistent volume
+# (e.g. Railway) instead of the container's ephemeral filesystem. Defaults
+# to "." so local dev behavior is unchanged.
+DATA_DIR = os.environ.get("DATA_DIR", ".")
+os.makedirs(DATA_DIR, exist_ok=True)
+sqlite_file_name = os.path.join(DATA_DIR, "database_v2.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 connect_args = {"check_same_thread": False}

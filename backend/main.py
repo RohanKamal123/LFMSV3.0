@@ -12,7 +12,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration
+# CORS configuration - ALLOWED_ORIGINS lets a deployment add its real
+# frontend domain(s) (comma-separated) without a code change.
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -21,6 +22,9 @@ origins = [
     "http://0.0.0.0:5173",
     "http://localhost:8000",
 ]
+extra_origins = os.environ.get("ALLOWED_ORIGINS", "")
+if extra_origins:
+    origins.extend(o.strip() for o in extra_origins.split(",") if o.strip())
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,10 +55,11 @@ app.include_router(handover_session.router, prefix="/api/handover-session", tags
 app.include_router(tickets.router, prefix="/api/tickets", tags=["tickets"])
 
 
-# Mount uploads directory to serve static files
+# Mount uploads directory to serve static files (DATA_DIR-aware, see database.py)
 from fastapi.staticfiles import StaticFiles
-os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+uploads_dir = os.path.join(os.environ.get("DATA_DIR", "."), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 @app.get("/")
 def read_root():

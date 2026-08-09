@@ -5,7 +5,7 @@ import uuid
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.path.join(os.environ.get("DATA_DIR", "."), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/")

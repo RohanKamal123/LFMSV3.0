@@ -16,7 +16,7 @@ from services.notify import send_notification
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploads/ids"
+UPLOAD_DIR = os.path.join(os.environ.get("DATA_DIR", "."), "uploads", "ids")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/report-found")
