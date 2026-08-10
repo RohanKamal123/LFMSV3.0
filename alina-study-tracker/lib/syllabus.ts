@@ -1,0 +1,243 @@
+/**
+ * Default SSC (Science group) subject + chapter list, NCTB.
+ *
+ * This is a *starting point only*. Board editions differ year to year, so
+ * every subject and chapter is editable and deletable from the Syllabus and
+ * Settings pages - she should check this against her own printed books and
+ * fix anything that does not match.
+ */
+
+export interface SeedSubject {
+  name: string;
+  nameBn: string;
+  color: string;
+  fullMarks: number;
+  chapters: { name: string; nameBn: string }[];
+}
+
+export const SSC_SUBJECTS: SeedSubject[] = [
+  {
+    name: "Physics",
+    nameBn: "পদার্থবিজ্ঞান",
+    color: "#6366f1",
+    fullMarks: 100,
+    chapters: [
+      { name: "Physical Quantities and Measurement", nameBn: "ভৌত রাশি এবং পরিমাপ" },
+      { name: "Motion", nameBn: "গতি" },
+      { name: "Force", nameBn: "বল" },
+      { name: "Work, Power and Energy", nameBn: "কাজ, ক্ষমতা ও শক্তি" },
+      { name: "States of Matter and Pressure", nameBn: "পদার্থের অবস্থা ও চাপ" },
+      { name: "Effect of Heat on Matter", nameBn: "বস্তুর উপর তাপের প্রভাব" },
+      { name: "Waves and Sound", nameBn: "তরঙ্গ ও শব্দ" },
+      { name: "Reflection of Light", nameBn: "আলোর প্রতিফলন" },
+      { name: "Refraction of Light", nameBn: "আলোর প্রতিসরণ" },
+      { name: "Static Electricity", nameBn: "স্থির বিদ্যুৎ" },
+      { name: "Current Electricity", nameBn: "চল বিদ্যুৎ" },
+      { name: "Magnetic Effect of Current", nameBn: "বিদ্যুতের চৌম্বক ক্রিয়া" },
+      { name: "Modern Physics and Electronics", nameBn: "আধুনিক পদার্থবিজ্ঞান ও ইলেকট্রনিক্স" },
+      { name: "Physics in Saving Life", nameBn: "জীবন বাঁচাতে পদার্থবিজ্ঞান" },
+    ],
+  },
+  {
+    name: "Chemistry",
+    nameBn: "রসায়ন",
+    color: "#14b8a6",
+    fullMarks: 100,
+    chapters: [
+      { name: "Concept of Chemistry", nameBn: "রসায়নের ধারণা" },
+      { name: "States of Matter", nameBn: "পদার্থের অবস্থা" },
+      { name: "Structure of Matter", nameBn: "পদার্থের গঠন" },
+      { name: "Periodic Table", nameBn: "পর্যায় সারণি" },
+      { name: "Chemical Bonding", nameBn: "রাসায়নিক বন্ধন" },
+      { name: "Concept of Mole and Chemical Calculation", nameBn: "মোলের ধারণা ও রাসায়নিক গণনা" },
+      { name: "Chemical Reaction", nameBn: "রাসায়নিক বিক্রিয়া" },
+      { name: "Chemistry and Energy", nameBn: "রসায়ন ও শক্তি" },
+      { name: "Acid-Base Balance", nameBn: "এসিড-ক্ষার সমতা" },
+      { name: "Mineral Resources: Fossils", nameBn: "খনিজ সম্পদ: জীবাশ্ম" },
+      { name: "Mineral Resources: Metals and Non-metals", nameBn: "খনিজ সম্পদ: ধাতু-অধাতু" },
+      { name: "Chemistry in Our Life", nameBn: "আমাদের জীবনে রসায়ন" },
+    ],
+  },
+  {
+    name: "Biology",
+    nameBn: "জীববিজ্ঞান",
+    color: "#22c55e",
+    fullMarks: 100,
+    chapters: [
+      { name: "Life Studies", nameBn: "জীবন পাঠ" },
+      { name: "Cell and Tissue", nameBn: "জীবকোষ ও টিস্যু" },
+      { name: "Cell Division", nameBn: "কোষ বিভাজন" },
+      { name: "Bioenergetics", nameBn: "জীবনীশক্তি" },
+      { name: "Food, Nutrition and Digestion", nameBn: "খাদ্য, পুষ্টি ও পরিপাক" },
+      { name: "Transport in Organisms", nameBn: "জীবে পরিবহন" },
+      { name: "Gaseous Exchange", nameBn: "গ্যাসীয় বিনিময়" },
+      { name: "Excretion", nameBn: "রেচন ক্রিয়া" },
+      { name: "Support and Movement", nameBn: "দৃঢ়তা প্রদান ও চলন" },
+      { name: "Coordination", nameBn: "সমন্বয়" },
+      { name: "Reproduction", nameBn: "জীবের প্রজনন" },
+      { name: "Heredity and Evolution", nameBn: "জীবের বংশগতি ও বিবর্তন" },
+      { name: "Environment of Organisms", nameBn: "জীবের পরিবেশ" },
+      { name: "Biotechnology", nameBn: "জীবপ্রযুক্তি" },
+    ],
+  },
+  {
+    name: "General Mathematics",
+    nameBn: "সাধারণ গণিত",
+    color: "#f59e0b",
+    fullMarks: 100,
+    chapters: [
+      { name: "Real Numbers", nameBn: "বাস্তব সংখ্যা" },
+      { name: "Set and Function", nameBn: "সেট ও ফাংশন" },
+      { name: "Algebraic Expressions", nameBn: "বীজগাণিতিক রাশি" },
+      { name: "Exponents and Logarithms", nameBn: "সূচক ও লগারিদম" },
+      { name: "Equations in One Variable", nameBn: "এক চলকবিশিষ্ট সমীকরণ" },
+      { name: "Lines, Angles and Triangles", nameBn: "রেখা, কোণ ও ত্রিভুজ" },
+      { name: "Practical Geometry", nameBn: "ব্যবহারিক জ্যামিতি" },
+      { name: "Circle", nameBn: "বৃত্ত" },
+      { name: "Trigonometric Ratios", nameBn: "ত্রিকোণমিতিক অনুপাত" },
+      { name: "Distance and Height", nameBn: "দূরত্ব ও উচ্চতা" },
+      { name: "Algebraic Ratio and Proportion", nameBn: "বীজগাণিতিক অনুপাত ও সমানুপাত" },
+      { name: "Simultaneous Equations in Two Variables", nameBn: "দুই চলকবিশিষ্ট সরল সহসমীকরণ" },
+      { name: "Finite Series", nameBn: "সসীম ধারা" },
+      { name: "Ratio, Similarity and Symmetry", nameBn: "অনুপাত, সদৃশতা ও প্রতিসমতা" },
+      { name: "Theorems on Area", nameBn: "ক্ষেত্রফল সম্পর্কিত উপপাদ্য ও সম্পাদ্য" },
+      { name: "Mensuration", nameBn: "পরিমিতি" },
+      { name: "Statistics", nameBn: "পরিসংখ্যান" },
+    ],
+  },
+  {
+    name: "Higher Mathematics",
+    nameBn: "উচ্চতর গণিত",
+    color: "#ef4444",
+    fullMarks: 100,
+    chapters: [
+      { name: "Set and Function", nameBn: "সেট ও ফাংশন" },
+      { name: "Algebraic Expressions", nameBn: "বীজগাণিতিক রাশি" },
+      { name: "Geometry", nameBn: "জ্যামিতি" },
+      { name: "Geometric Construction", nameBn: "জ্যামিতিক অঙ্কন" },
+      { name: "Equations and Inequalities", nameBn: "সমীকরণ ও অসমতা" },
+      { name: "Infinite Series", nameBn: "অসীম ধারা" },
+      { name: "Trigonometry", nameBn: "ত্রিকোণমিতি" },
+      { name: "Exponential and Logarithmic Functions", nameBn: "সূচকীয় ও লগারিদমীয় ফাংশন" },
+      { name: "Binomial Expansion", nameBn: "দ্বিপদী বিস্তৃতি" },
+      { name: "Coordinate Geometry", nameBn: "স্থানাঙ্ক জ্যামিতি" },
+      { name: "Plane Vectors", nameBn: "সমতলীয় ভেক্টর" },
+      { name: "Solid Geometry", nameBn: "ঘন জ্যামিতি" },
+      { name: "Probability", nameBn: "সম্ভাবনা" },
+    ],
+  },
+  {
+    name: "Bangla 1st Paper",
+    nameBn: "বাংলা ১ম পত্র",
+    color: "#10b981",
+    fullMarks: 100,
+    chapters: [
+      { name: "Prose", nameBn: "গদ্য" },
+      { name: "Poetry", nameBn: "পদ্য" },
+      { name: "Novel - Kakatarua", nameBn: "উপন্যাস - কাকতাড়ুয়া" },
+      { name: "Drama - Bahattorer Ekti Din", nameBn: "নাটক - বহিপীর" },
+    ],
+  },
+  {
+    name: "Bangla 2nd Paper",
+    nameBn: "বাংলা ২য় পত্র",
+    color: "#84cc16",
+    fullMarks: 100,
+    chapters: [
+      { name: "Phonetics and Spelling", nameBn: "ধ্বনি ও বর্ণ, বানান" },
+      { name: "Word Formation", nameBn: "শব্দ গঠন - প্রকৃতি ও প্রত্যয়" },
+      { name: "Parts of Speech", nameBn: "পদ প্রকরণ" },
+      { name: "Sandhi, Samas, Upasarga", nameBn: "সন্ধি, সমাস, উপসর্গ" },
+      { name: "Sentence and Syntax", nameBn: "বাক্য প্রকরণ" },
+      { name: "Punctuation and Usage", nameBn: "বিরামচিহ্ন ও প্রয়োগ" },
+      { name: "Composition - Essay, Letter, Report", nameBn: "নির্মিতি - প্রবন্ধ, পত্র, প্রতিবেদন" },
+    ],
+  },
+  {
+    name: "English 1st Paper",
+    nameBn: "ইংরেজি ১ম পত্র",
+    color: "#0ea5e9",
+    fullMarks: 100,
+    chapters: [
+      { name: "Seen Comprehension - Units", nameBn: "সিন কম্প্রিহেনশন" },
+      { name: "Unseen Comprehension", nameBn: "আনসিন কম্প্রিহেনশন" },
+      { name: "Information Transfer / Flow Chart", nameBn: "ইনফরমেশন ট্রান্সফার" },
+      { name: "Summary and Rearrange", nameBn: "সামারি ও রিঅ্যারেঞ্জ" },
+      { name: "Paragraph and Story Writing", nameBn: "প্যারাগ্রাফ ও স্টোরি রাইটিং" },
+      { name: "Email, Letter and Dialogue", nameBn: "ইমেইল, লেটার ও ডায়ালগ" },
+      { name: "Graph and Chart Description", nameBn: "গ্রাফ ও চার্ট বর্ণনা" },
+    ],
+  },
+  {
+    name: "English 2nd Paper",
+    nameBn: "ইংরেজি ২য় পত্র",
+    color: "#3b82f6",
+    fullMarks: 100,
+    chapters: [
+      { name: "Articles and Prepositions", nameBn: "আর্টিকেল ও প্রিপজিশন" },
+      { name: "Right Form of Verbs", nameBn: "রাইট ফর্ম অব ভার্বস" },
+      { name: "Narration", nameBn: "ন্যারেশন" },
+      { name: "Transformation of Sentences", nameBn: "ট্রান্সফরমেশন অব সেনটেন্স" },
+      { name: "Voice and Tense", nameBn: "ভয়েস ও টেন্স" },
+      { name: "Connectors and Modifiers", nameBn: "কানেক্টর ও মডিফায়ার" },
+      { name: "Completing Sentences and Punctuation", nameBn: "কমপ্লিটিং সেনটেন্স ও পাংচুয়েশন" },
+      { name: "Composition - Application, Report, Paragraph", nameBn: "কম্পোজিশন" },
+    ],
+  },
+  {
+    name: "ICT",
+    nameBn: "তথ্য ও যোগাযোগ প্রযুক্তি",
+    color: "#a855f7",
+    fullMarks: 50,
+    chapters: [
+      { name: "ICT: World and Bangladesh Perspective", nameBn: "তথ্য ও যোগাযোগ প্রযুক্তি: বিশ্ব ও বাংলাদেশ প্রেক্ষিত" },
+      { name: "Computer and User Safety", nameBn: "কম্পিউটার ও কম্পিউটার ব্যবহারকারীর নিরাপত্তা" },
+      { name: "My Writing and Calculation", nameBn: "আমার লেখালেখি ও হিসাব" },
+      { name: "My Presentation", nameBn: "আমার উপস্থাপন" },
+      { name: "Multimedia and Its Use", nameBn: "মাল্টিমিডিয়া ও এর ব্যবহার" },
+      { name: "Use of Database", nameBn: "ডেটাবেজের ব্যবহার" },
+    ],
+  },
+  {
+    name: "Religion and Moral Education",
+    nameBn: "ধর্ম ও নৈতিক শিক্ষা",
+    color: "#f97316",
+    fullMarks: 100,
+    chapters: [
+      { name: "Aqaid and Moral Life", nameBn: "আক্বাইদ ও নৈতিক জীবন" },
+      { name: "Ibadat", nameBn: "ইবাদত" },
+      { name: "Quran and Hadith Studies", nameBn: "কুরআন ও হাদিস শিক্ষা" },
+      { name: "Akhlaq", nameBn: "আখলাক" },
+      { name: "Ideal Life History", nameBn: "আদর্শ জীবনচরিত" },
+    ],
+  },
+  {
+    name: "Bangladesh and Global Studies",
+    nameBn: "বাংলাদেশ ও বিশ্বপরিচয়",
+    color: "#8b5cf6",
+    fullMarks: 100,
+    chapters: [
+      { name: "Environment of Bangladesh", nameBn: "বাংলাদেশের পরিবেশ ও জলবায়ু" },
+      { name: "History of Independence", nameBn: "স্বাধীন বাংলাদেশের অভ্যুদয়" },
+      { name: "Constitution and Government", nameBn: "সংবিধান ও সরকার ব্যবস্থা" },
+      { name: "Economy and Development", nameBn: "অর্থনীতি ও উন্নয়ন" },
+      { name: "Population and Resources", nameBn: "জনসংখ্যা ও সম্পদ" },
+      { name: "Global Organisations", nameBn: "আন্তর্জাতিক সংস্থা" },
+    ],
+  },
+];
+
+/** Subjects created on first run. The rest can be added from Settings in one tap. */
+export const DEFAULT_SUBJECT_NAMES = [
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "General Mathematics",
+  "Higher Mathematics",
+  "English 1st Paper",
+  "English 2nd Paper",
+  "Bangla 1st Paper",
+  "Bangla 2nd Paper",
+  "ICT",
+  "Religion and Moral Education",
+];
