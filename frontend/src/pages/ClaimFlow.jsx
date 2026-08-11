@@ -219,7 +219,7 @@ const ClaimFlow = () => {
                             <p className="ref-tag inline-block mb-8">FX&#8209;AX&#8209;{verificationResult.id}</p>
 
                             <div className="bg-white p-5 rounded-lg border border-line inline-block mb-8">
-                                <QRCodeSVG value={`CLAIM-${itemId}-${item?.title}`} size={180} />
+                                <QRCodeSVG value={JSON.stringify({ uiu_id: user?.uiu_id, name: user?.name })} size={180} />
                             </div>
 
                             <div className="bg-ink p-6 rounded-lg text-left text-white mb-6">
