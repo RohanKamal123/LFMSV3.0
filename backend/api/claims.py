@@ -17,6 +17,9 @@ async def create_claim(claim_data: dict, session: Session = Depends(get_session)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
+    if item.finder_id and item.finder_id == claim_data.get("claimant_id"):
+        raise HTTPException(status_code=400, detail="You cannot claim an item you reported as found.")
+
     attempt = session.get(QuizAttempt, claim_data.get("attempt_id"))
     if not attempt or attempt.item_id != item.id:
         raise HTTPException(status_code=400, detail="Invalid or expired quiz attempt")

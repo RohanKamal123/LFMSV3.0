@@ -102,6 +102,15 @@ const ClaimFlow = () => {
         </div>
     );
 
+    if (item && item.finder_id && item.finder_id === user?.id) return (
+        <div className="text-center py-20">
+            <AlertCircle size={48} className="mx-auto mb-4 text-primary/40" />
+            <h2 className="font-display text-xl font-bold text-ink mb-3">This is your own report</h2>
+            <p className="text-ink/50 mb-6">You reported this item as found, so you can&apos;t file a claim on it yourself.</p>
+            <button onClick={() => navigate('/browse')} className="btn-primary">Go to registry</button>
+        </div>
+    );
+
     return (
         <div className="max-w-xl mx-auto pb-20">
             <div className="mb-8">

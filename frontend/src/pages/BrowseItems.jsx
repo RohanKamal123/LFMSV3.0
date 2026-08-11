@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, ArrowRight } from 'lucide-react';
+import { Search, Filter, MapPin, ArrowRight, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../api_config';
 
 const BrowseItems = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [items, setItems] = useState([]);
     const [categories, setCategories] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -147,12 +149,18 @@ const BrowseItems = () => {
 
                                 <div className="flex justify-between items-center pt-4 divider-dashed">
                                     {item.type === 'FOUND' ? (
-                                        <button
-                                            onClick={() => navigate(`/claim?itemId=${item.id}`)}
-                                            className="text-sm font-semibold text-primary hover:text-orange-700 flex items-center gap-1 group/btn"
-                                        >
-                                            Claim item <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                                        </button>
+                                        item.finder_id && item.finder_id === user?.id ? (
+                                            <span className="text-sm font-semibold text-ink/30 flex items-center gap-1.5">
+                                                <UserCheck size={14} /> Your report
+                                            </span>
+                                        ) : (
+                                            <button
+                                                onClick={() => navigate(`/claim?itemId=${item.id}`)}
+                                                className="text-sm font-semibold text-primary hover:text-orange-700 flex items-center gap-1 group/btn"
+                                            >
+                                                Claim item <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                                            </button>
+                                        )
                                     ) : (
                                         <button
                                             onClick={() => {

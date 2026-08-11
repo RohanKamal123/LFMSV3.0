@@ -54,6 +54,7 @@ def browse_items(
             "type": "FOUND",
             "date": item.found_at,
             "state": item.state,
+            "finder_id": item.finder_id,
             "image_url": primary_img if primary_img else None
         })
         

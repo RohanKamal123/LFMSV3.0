@@ -81,6 +81,8 @@ def get_summary_stats(session: Session = Depends(get_session)):
     # Claim Metrics
     total_claims = session.exec(select(func.count(Claim.id))).one()
     approved_claims = session.exec(select(func.count(Claim.id)).where(Claim.status == "APPROVED")).one()
+    pending_claims = session.exec(select(func.count(Claim.id)).where(Claim.status == "PENDING")).one()
+    rejected_claims = session.exec(select(func.count(Claim.id)).where(Claim.status == "REJECTED")).one()
     claim_success_rate = (approved_claims / total_claims * 100) if total_claims > 0 else 100
     
     # User Activity (Top Reporters)
@@ -149,7 +151,10 @@ def get_summary_stats(session: Session = Depends(get_session)):
         "room_110_count": room_110_count,
         "claim_stats": {
             "total": total_claims,
-            "success_rate": round(claim_success_rate, 1)
+            "success_rate": round(claim_success_rate, 1),
+            "approved": approved_claims,
+            "pending": pending_claims,
+            "rejected": rejected_claims
         },
         "avg_resolution_hours": avg_resolution_hours,
         "staff_throughput": staff_throughput,

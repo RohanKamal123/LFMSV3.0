@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { QrCode, X, CheckCircle2, AlertTriangle, Loader2, ShieldCheck, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Html5QrcodeScanner } from "html5-qrcode";
+import { QrCode, X, CheckCircle2, AlertTriangle, Loader2, ShieldCheck, User, Keyboard, ScanLine } from 'lucide-react';
 import { API_BASE_URL } from '../api_config';
 
 const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, user, items }) => {
@@ -8,12 +9,45 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, user, items }) =>
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
+    const [mode, setMode] = useState('camera'); // 'camera' or 'manual'
+    const [scanConfirmed, setScanConfirmed] = useState(false);
+
+    // Real camera-based QR scan of the claimant's Hub QR (JSON: {uiu_id, name})
+    useEffect(() => {
+        if (isOpen && mode === 'camera' && !result && !scanConfirmed) {
+            const scanner = new Html5QrcodeScanner("handover-reader", {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            });
+
+            scanner.render((decodedText) => {
+                let uiuId = decodedText;
+                try {
+                    const parsed = JSON.parse(decodedText);
+                    if (parsed.uiu_id) uiuId = parsed.uiu_id;
+                } catch (_e) {
+                    // Not JSON - treat the raw scanned text as the UIU ID itself.
+                }
+                setScannedId(uiuId);
+                setScanConfirmed(true);
+                scanner.clear().catch(() => { });
+            }, (_warn) => {
+                // Silently ignore scan-frame misses
+            });
+
+            return () => {
+                scanner.clear().catch(() => { });
+            };
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, mode, result, scanConfirmed]);
 
     if (!isOpen) return null;
 
     const handleHandover = async () => {
         if (!scannedId || !selectedItemId) {
-            setError("Please select an item and enter/scan the claimant's ID.");
+            setError("Please select an item and scan or enter the claimant's ID.");
             return;
         }
 
@@ -38,6 +72,12 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, user, items }) =>
         } finally {
             setLoading(false);
         }
+    };
+
+    const resetScan = () => {
+        setScannedId('');
+        setScanConfirmed(false);
+        setError(null);
     };
 
     return (
@@ -75,21 +115,47 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, user, items }) =>
                                 </select>
                             </div>
 
-                            {/* Step 2: "Scanning" Simulation */}
+                            {/* Step 2: Real QR scan or manual entry */}
                             <div>
-                                <label className="eyebrow block mb-2">2. Scan claimant QR code</label>
-                                <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="Scan QR or enter UIU ID"
-                                        className="input-field pl-11 font-mono"
-                                        value={scannedId}
-                                        onChange={(e) => setScannedId(e.target.value)}
-                                        autoFocus
-                                    />
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="eyebrow">2. Scan claimant&apos;s Hub QR</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setMode(mode === 'camera' ? 'manual' : 'camera'); resetScan(); }}
+                                        className="text-xs font-semibold text-accent flex items-center gap-1"
+                                    >
+                                        {mode === 'camera' ? <><Keyboard size={13} /> Enter manually</> : <><ScanLine size={13} /> Use camera</>}
+                                    </button>
                                 </div>
+
+                                {mode === 'camera' ? (
+                                    scanConfirmed ? (
+                                        <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle2 size={18} className="text-accent" />
+                                                <div>
+                                                    <p className="text-xs text-ink/40">Scanned UIU ID</p>
+                                                    <p className="font-mono font-semibold text-ink">{scannedId}</p>
+                                                </div>
+                                            </div>
+                                            <button onClick={resetScan} className="text-xs font-semibold text-primary">Rescan</button>
+                                        </div>
+                                    ) : (
+                                        <div id="handover-reader" className="overflow-hidden rounded-lg border border-dashed border-line bg-paper"></div>
+                                    )
+                                ) : (
+                                    <div className="relative">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={16} />
+                                        <input
+                                            type="text"
+                                            placeholder="Enter UIU ID"
+                                            className="input-field pl-11 font-mono"
+                                            value={scannedId}
+                                            onChange={(e) => setScannedId(e.target.value)}
+                                            autoFocus
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {error && (

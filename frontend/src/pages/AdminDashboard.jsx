@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import {
     BarChart3, Users, Archive, AlertTriangle, ShieldCheck,
     Edit3, Trash2, X, CheckCircle2,
-    TrendingUp, Database, Layers, Eye, UserCheck,
+    Database, Layers, Eye, UserCheck, Tags,
     Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag
 } from 'lucide-react';
 import {
-    XAxis, Tooltip,
-    ResponsiveContainer, BarChart, Bar
+    XAxis, YAxis, Tooltip, CartesianGrid,
+    ResponsiveContainer, BarChart, Bar, AreaChart, Area, Legend
 } from 'recharts';
 import { API_BASE_URL } from '../api_config';
 import { useAuth } from '../context/AuthContext';
@@ -144,136 +144,220 @@ const AdminDashboard = () => {
 
 /* --- PANELS --- */
 
+const SectionHeader = ({ eyebrow, title }) => (
+    <div className="mb-5">
+        <p className="eyebrow mb-1">{eyebrow}</p>
+        <h3 className="font-display text-xl font-bold text-ink">{title}</h3>
+    </div>
+);
+
 const AnalyticsPanel = ({ stats }) => {
     if (!stats) return null;
 
     const cards = [
-        { label: "Active Items", value: stats.summary.ACTIVE || 0, color: "text-blue-600", bg: "bg-blue-50", icon: Database },
-        { label: "Pending Pickup", value: stats.summary.READY_FOR_PICKUP || 0, color: "text-orange-600", bg: "bg-orange-50", icon: Package },
-        { label: "Resolved Total", value: stats.summary.RESOLVED || 0, color: "text-green-600", bg: "bg-green-50", icon: CheckCircle2 },
-        { label: "Late Assets", value: stats.summary.OVERDUE_SUBMISSION || 0, color: "text-red-600", bg: "bg-red-50", icon: AlertTriangle },
+        { label: "Active", sub: "browsable right now", value: stats.summary.ACTIVE || 0, color: "text-blue-600", bg: "bg-blue-50", icon: Database },
+        { label: "Pending pickup", sub: "waiting at Room 110", value: stats.summary.READY_FOR_PICKUP || 0, color: "text-primary", bg: "bg-primary/10", icon: Package },
+        { label: "Resolved", sub: "handed back, all time", value: stats.summary.RESOLVED || 0, color: "text-accent", bg: "bg-accent/10", icon: CheckCircle2 },
+        { label: "Overdue", sub: "past the 72h drop-off window", value: stats.summary.OVERDUE_SUBMISSION || 0, color: "text-red-600", bg: "bg-red-50", icon: AlertTriangle },
+    ];
+
+    const claimTotal = stats.claim_stats?.total || 0;
+    const claimSegments = [
+        { label: "Approved", value: stats.claim_stats?.approved || 0, color: "bg-accent", text: "text-accent" },
+        { label: "Pending review", value: stats.claim_stats?.pending || 0, color: "bg-primary", text: "text-primary" },
+        { label: "Rejected", value: stats.claim_stats?.rejected || 0, color: "bg-red-500", text: "text-red-600" },
     ];
 
     return (
         <div className="space-y-10">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                {cards.map((card, i) => (
-                    <div key={i} className="bg-white p-8 rounded-xl border border-line shadow-xl relative overflow-hidden group">
-                        <div className={`${card.bg} ${card.color} w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform`}>
-                            <card.icon size={28} />
+            {/* Right now */}
+            <div>
+                <SectionHeader eyebrow="Live" title="Right now" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {cards.map((card, i) => (
+                        <div key={i} className="card p-6">
+                            <div className={`${card.bg} ${card.color} w-11 h-11 rounded-lg flex items-center justify-center mb-4`}>
+                                <card.icon size={20} />
+                            </div>
+                            <h4 className="font-display text-3xl font-bold text-ink leading-none mb-1.5">{card.value}</h4>
+                            <p className="text-sm font-semibold text-ink/70">{card.label}</p>
+                            <p className="text-xs text-ink/40 mt-0.5">{card.sub}</p>
                         </div>
-                        <h4 className="text-5xl font-black text-ink leading-none mb-1">{card.value}</h4>
-                        <p className="text-[10px] font-black text-ink/40 uppercase tracking-[0.2em]">{card.label}</p>
-                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity">
-                            <card.icon size={100} />
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
-            {/* Performance Chart */}
-            <div className="bg-ink p-10 rounded-xl text-white shadow-2xl relative overflow-hidden group">
-                <div className="relative z-10">
-                    <h3 className="text-2xl font-display font-bold mb-10 flex items-center gap-3">
-                        <ShieldCheck className="text-orange-500" size={28} />
-                        Sector Activity
-                    </h3>
-                    <div className="space-y-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            {/* This week trend - previously computed server-side but never rendered */}
+            <div className="card p-8">
+                <SectionHeader eyebrow="Last 7 days" title="Found vs. resolved" />
+                <div className="h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={stats.timeline}>
+                            <defs>
+                                <linearGradient id="foundGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#CC5500" stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor="#CC5500" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="resolvedGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#008080" stopOpacity={0.25} />
+                                    <stop offset="95%" stopColor="#008080" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E4DCCB" />
+                            <XAxis dataKey="date" fontSize={11} axisLine={false} tickLine={false} />
+                            <YAxis fontSize={11} axisLine={false} tickLine={false} allowDecimals={false} />
+                            <Tooltip contentStyle={{ borderRadius: '10px', border: '1px solid #E4DCCB' }} />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <Area type="monotone" dataKey="found" name="Found" stroke="#CC5500" fill="url(#foundGrad)" strokeWidth={2} />
+                            <Area type="monotone" dataKey="resolved" name="Resolved" stroke="#008080" fill="url(#resolvedGrad)" strokeWidth={2} />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* By category / by location - category_counts was also computed but unused */}
+            <div className="grid lg:grid-cols-2 gap-6">
+                <div className="card p-8">
+                    <SectionHeader eyebrow="Breakdown" title="By category" />
+                    <div className="space-y-4">
+                        {(stats.category_counts || []).length === 0 && <p className="text-sm text-ink/30">No items yet</p>}
+                        {(stats.category_counts || []).map((cat, i) => {
+                            const max = Math.max(...(stats.category_counts || []).map(c => c.count), 1);
+                            return (
+                                <div key={i}>
+                                    <div className="flex justify-between text-xs font-medium text-ink/60 mb-1.5">
+                                        <span className="flex items-center gap-1.5"><Tags size={11} /> {cat.name}</span>
+                                        <span className="font-mono text-ink">{cat.count}</span>
+                                    </div>
+                                    <div className="w-full bg-paper h-2 rounded-full overflow-hidden">
+                                        <div className="bg-accent h-full rounded-full" style={{ width: `${(cat.count / max) * 100}%` }}></div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="bg-ink p-8 rounded-xl text-white">
+                    <p className="eyebrow text-white/40 mb-1">Breakdown</p>
+                    <h3 className="font-display text-xl font-bold mb-5">By location</h3>
+                    <div className="space-y-5 max-h-[260px] overflow-y-auto pr-2">
+                        {(stats.location_counts || []).length === 0 && <p className="text-sm text-white/30">No items yet</p>}
                         {(stats.location_counts || []).map((loc, i) => (
                             <div key={i}>
-                                <div className="flex justify-between text-[10px] font-semibold text-ink/40 mb-3">
-                                    <span>{loc.name} Density</span>
-                                    <span className="text-white">{loc.count} Assets</span>
+                                <div className="flex justify-between text-xs text-white/50 mb-2">
+                                    <span>{loc.name}</span>
+                                    <span className="text-white font-mono">{loc.count}</span>
                                 </div>
-                                <div className="w-full bg-white/5 h-3 rounded-full overflow-hidden border border-white/5">
+                                <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                                     <div
-                                        className="bg-orange-500 h-full rounded-full transition-all duration-1000"
+                                        className="bg-primary h-full rounded-full"
                                         style={{ width: `${Math.min((loc.count / (stats.summary.ACTIVE || 1)) * 100, 100)}%` }}
                                     ></div>
                                 </div>
                             </div>
                         ))}
-                        <div className="pt-8 border-t border-white/5 mt-10">
-                            <p className="text-[10px] font-black text-ink/50 mb-4">Verification Accuracy</p>
-                            <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full animate-pulse shadow-lg ${stats.claim_stats?.success_rate > 70 ? 'bg-green-500 shadow-green-500/50' : 'bg-orange-500 shadow-orange-500/50'}`}></div>
-                                <span className="text-2xl font-semibold">{stats.claim_stats?.success_rate || 100}%</span>
-                            </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Claim verification health - the old panel only showed a lone success % buried
+                inside the location card; this makes the actual approve/pending/reject split visible. */}
+            <div className="card p-8">
+                <SectionHeader eyebrow={`${claimTotal} total claims`} title="Claim verification health" />
+                {claimTotal === 0 ? (
+                    <p className="text-sm text-ink/30">No claims filed yet</p>
+                ) : (
+                    <>
+                        <div className="w-full h-3 rounded-full overflow-hidden flex mb-5 border border-line">
+                            {claimSegments.map((seg, i) => (
+                                seg.value > 0 && (
+                                    <div key={i} className={seg.color} style={{ width: `${(seg.value / claimTotal) * 100}%` }}></div>
+                                )
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                            {claimSegments.map((seg, i) => (
+                                <div key={i} className="flex items-center gap-2.5">
+                                    <div className={`w-2 h-2 rounded-full ${seg.color}`}></div>
+                                    <div>
+                                        <p className={`font-display text-lg font-bold ${seg.text}`}>{seg.value}</p>
+                                        <p className="text-xs text-ink/40">{seg.label}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Operations */}
+            <div>
+                <SectionHeader eyebrow="Team & system" title="Operations" />
+                <div className="grid lg:grid-cols-3 gap-6 mb-6">
+                    <div className="card p-6">
+                        <h4 className="text-xs font-semibold text-ink/40 mb-3 flex items-center gap-2">
+                            <Clock size={14} className="text-primary" /> Avg. time to resolve
+                        </h4>
+                        <p className="font-display text-3xl font-bold text-ink">
+                            {stats.avg_resolution_hours != null ? `${stats.avg_resolution_hours}h` : '—'}
+                        </p>
+                        <p className="text-xs text-ink/40 mt-1">From report to handover</p>
+                    </div>
+
+                    <div className="card p-6">
+                        <h4 className="text-xs font-semibold text-ink/40 mb-3 flex items-center gap-2">
+                            <UserCheck size={14} className="text-accent" /> Staff throughput
+                        </h4>
+                        <div className="space-y-1.5">
+                            {(stats.staff_throughput || []).length === 0 && <p className="text-sm text-ink/30">No handovers yet</p>}
+                            {(stats.staff_throughput || []).map((s, i) => (
+                                <div key={i} className="flex justify-between text-sm">
+                                    <span className="text-ink/70">{s.name}</span>
+                                    <span className="text-accent font-mono">{s.count}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Bottom Row - More Analytics */}
-            <div className="grid lg:grid-cols-2 gap-10">
-                <div className="bg-white p-10 rounded-xl border border-line shadow-2xl">
-                    <h3 className="text-xl font-black text-ink mb-8 flex items-center gap-3">
-                        <Clock className="text-primary" size={24} />
-                        Peak Intake Hours
-                    </h3>
-                    <div className="h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.hourly_stats}>
-                                <Bar dataKey="count" fill="#FF6B00" radius={[10, 10, 0, 0]} />
-                                <XAxis dataKey="hour" fontSize={8} fontWeight="bold" axisLine={false} tickLine={false} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 30px -10px rgb(0 0 0 / 0.1)' }} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="card p-6">
+                        <h4 className="text-xs font-semibold text-ink/40 mb-3 flex items-center gap-2">
+                            <LifeBuoy size={14} className="text-primary" /> Ticket resolution
+                        </h4>
+                        <p className="font-display text-3xl font-bold text-ink">{stats.ticket_stats?.resolution_rate ?? 100}%</p>
+                        <p className="text-xs text-ink/40 mt-1">{stats.ticket_stats?.resolved ?? 0} / {stats.ticket_stats?.total ?? 0} resolved</p>
                     </div>
                 </div>
 
-                <div className="bg-white p-10 rounded-xl border border-line shadow-2xl">
-                    <h3 className="text-xl font-black text-ink mb-8 flex items-center gap-3">
-                        <TrendingUp className="text-teal-500" size={24} />
-                        Top Network Contributors
-                    </h3>
-                    <div className="space-y-4">
-                        {(stats.user_activity || []).map((u, i) => (
-                            <div key={i} className="flex justify-between items-center p-4 bg-paper rounded-2xl border border-transparent hover:border-teal-100 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center text-[10px] font-black">{i + 1}</div>
-                                    <span className="text-xs font-display font-bold text-ink/70">{u.name}</span>
+                <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="card p-8">
+                        <SectionHeader eyebrow="Business hours" title="Peak intake hours" />
+                        <div className="h-[180px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={stats.hourly_stats}>
+                                    <Bar dataKey="count" fill="#CC5500" radius={[6, 6, 0, 0]} />
+                                    <XAxis dataKey="hour" fontSize={10} axisLine={false} tickLine={false} />
+                                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '10px', border: '1px solid #E4DCCB' }} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="card p-8">
+                        <SectionHeader eyebrow="Community" title="Top reporters" />
+                        <div className="space-y-2">
+                            {(stats.user_activity || []).length === 0 && <p className="text-sm text-ink/30">No reports yet</p>}
+                            {(stats.user_activity || []).map((u, i) => (
+                                <div key={i} className="flex justify-between items-center p-3 bg-paper rounded-lg">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">{i + 1}</div>
+                                        <span className="text-sm font-medium text-ink/70">{u.name}</span>
+                                    </div>
+                                    <span className="text-sm font-mono text-accent">{u.count}</span>
                                 </div>
-                                <span className="text-xs font-black text-teal-600">{u.count} Assets Found</span>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Row 3 - Resolution + Staff + Tickets */}
-            <div className="grid lg:grid-cols-3 gap-10">
-                <div className="bg-white p-10 rounded-xl border border-line shadow-xl">
-                    <h3 className="text-sm font-black text-ink/40 mb-4 flex items-center gap-2">
-                        <Clock size={16} className="text-primary" /> Avg. Time to Resolve
-                    </h3>
-                    <p className="text-4xl font-black text-ink">
-                        {stats.avg_resolution_hours != null ? `${stats.avg_resolution_hours}h` : '—'}
-                    </p>
-                </div>
-
-                <div className="bg-white p-10 rounded-xl border border-line shadow-xl">
-                    <h3 className="text-sm font-black text-ink/40 mb-4 flex items-center gap-2">
-                        <UserCheck size={16} className="text-teal-500" /> Staff Throughput
-                    </h3>
-                    <div className="space-y-2">
-                        {(stats.staff_throughput || []).length === 0 && <p className="text-xs text-ink/25 font-bold">No handovers yet</p>}
-                        {(stats.staff_throughput || []).map((s, i) => (
-                            <div key={i} className="flex justify-between text-xs font-bold text-ink/70">
-                                <span>{s.name}</span>
-                                <span className="text-teal-600">{s.count}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="bg-white p-10 rounded-xl border border-line shadow-xl">
-                    <h3 className="text-sm font-black text-ink/40 mb-4 flex items-center gap-2">
-                        <LifeBuoy size={16} className="text-orange-500" /> Ticket Resolution
-                    </h3>
-                    <p className="text-4xl font-black text-ink">{stats.ticket_stats?.resolution_rate ?? 100}%</p>
-                    <p className="text-[10px] font-bold text-ink/40 uppercase mt-1">{stats.ticket_stats?.resolved ?? 0} / {stats.ticket_stats?.total ?? 0} resolved</p>
                 </div>
             </div>
         </div>

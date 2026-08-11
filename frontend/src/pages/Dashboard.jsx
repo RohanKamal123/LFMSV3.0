@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    Bell, BellOff, Clock,
+    Bell, BellOff, Clock, ArrowRight, CreditCard,
     CheckCircle2, QrCode, Package, ExternalLink,
     AlertCircle, ShieldCheck, MapPin, X, ScanLine, LayoutDashboard, Search
 } from 'lucide-react';
@@ -207,6 +207,28 @@ const Dashboard = () => {
                             </div>
                         )}
 
+                        {/* Fast ID - big, first-class entry point for student ID card recovery */}
+                        <Link
+                            to="/fast-id"
+                            className="group block bg-accent rounded-xl p-8 text-white relative overflow-hidden hover:bg-teal-700 transition-colors"
+                        >
+                            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                <div className="flex items-center gap-5">
+                                    <div className="w-14 h-14 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                                        <CreditCard size={28} />
+                                    </div>
+                                    <div>
+                                        <p className="eyebrow text-white/60 mb-1">AI-powered recovery</p>
+                                        <h2 className="font-display text-2xl font-bold mb-1">Lost or found a Student ID?</h2>
+                                        <p className="text-white/70 text-sm max-w-md">Fast ID scans and matches ID cards automatically &mdash; usually faster than a regular report.</p>
+                                    </div>
+                                </div>
+                                <span className="bg-white text-accent font-semibold text-sm px-5 py-2.5 rounded-lg flex items-center gap-2 shrink-0 group-hover:gap-3 transition-all">
+                                    Open Fast ID <ArrowRight size={16} />
+                                </span>
+                            </div>
+                        </Link>
+
                         <div className="grid lg:grid-cols-2 gap-6">
                             {/* Welcome Card */}
                             <div className="bg-ink rounded-xl p-8 text-white flex flex-col justify-between">
@@ -227,21 +249,33 @@ const Dashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Action Scanner Card */}
-                            <div className="card p-8 flex flex-col items-center justify-center text-center">
-                                <div className="w-14 h-14 bg-accent/10 text-accent rounded-xl flex items-center justify-center mb-5">
-                                    <ScanLine size={28} />
+                            {/* Action Scanner Card - both handover paths */}
+                            <div className="card p-8 flex flex-col justify-center">
+                                <div className="flex items-center gap-3 mb-5">
+                                    <div className="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center shrink-0">
+                                        <ScanLine size={22} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-display text-lg font-bold text-ink">Handover scan</h4>
+                                        <p className="text-ink/40 text-xs">Real camera QR scanning</p>
+                                    </div>
                                 </div>
-                                <h4 className="font-display text-xl font-bold text-ink mb-2">Handover scan</h4>
-                                <p className="text-ink/50 text-sm mb-6 max-w-xs">
-                                    Ready to drop off an item or verify someone else&apos;s? Use the universal scanner.
-                                </p>
-                                <button
-                                    onClick={() => setIsScannerOpen(true)}
-                                    className="btn-ink w-full py-3"
-                                >
-                                    Launch QR scanner
-                                </button>
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={() => setIsScannerOpen(true)}
+                                        className="btn-ink w-full py-3 text-sm justify-between"
+                                    >
+                                        Hand over directly (Path A)
+                                        <ArrowRight size={15} />
+                                    </button>
+                                    <button
+                                        onClick={() => setIsStaffScannerOpen(true)}
+                                        className="w-full py-3 px-5 text-sm font-semibold text-ink border border-line rounded-lg hover:border-ink/30 transition-all flex items-center justify-between"
+                                    >
+                                        Join staff pickup session (Path B)
+                                        <QrCode size={15} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
