@@ -41,6 +41,11 @@ const ClaimFlow = () => {
             const data = await res.json();
             setQuizData(data.questions || []);
             setAttemptId(data.attempt_id);
+            // Each generated quiz has fresh questions/options/attempt_id - clear
+            // any answers left over from a prior (e.g. failed) attempt so stale
+            // selections can't be submitted against the new answer key.
+            setAnswers({});
+            setVerificationResult(null);
             setStep(2);
         } catch (err) {
             console.error(err);
