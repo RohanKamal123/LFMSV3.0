@@ -3,16 +3,30 @@ import smtplib
 from email.message import EmailMessage
 from typing import Optional
 
+import requests
 from sqlmodel import Session
 
 from models import Notification, NotificationType, User
 
 
 def _send_email(to_email: str, subject: str, body: str) -> None:
-    """Best-effort SMTP send. No-ops (and logs) if SMTP isn't configured or fails -
-    notifications must never block the request that triggered them."""
+    """Best-effort email send. No-ops (and logs) if nothing is configured, or
+    fails - notifications must never block the request that triggered them.
+
+    Prefers MailerSend's HTTP API (MAILERSEND_API_KEY) over raw SMTP: many
+    PaaS free tiers (Render included) block outbound SMTP ports entirely to
+    prevent spam abuse, while HTTPS is always allowed. Falls back to SMTP_*
+    for providers/hosts where direct SMTP actually works."""
+    if not to_email:
+        return
+
+    api_key = os.environ.get("MAILERSEND_API_KEY")
+    if api_key:
+        _send_via_mailersend_api(api_key, to_email, subject, body)
+        return
+
     host = os.environ.get("SMTP_HOST")
-    if not host or not to_email:
+    if not host:
         return
 
     port = int(os.environ.get("SMTP_PORT", "587"))
@@ -32,6 +46,26 @@ def _send_email(to_email: str, subject: str, body: str) -> None:
             if smtp_user and smtp_pass:
                 server.login(smtp_user, smtp_pass)
             server.send_message(msg)
+    except Exception as e:
+        print(f"Email send to {to_email} failed: {e!r}")
+
+
+def _send_via_mailersend_api(api_key: str, to_email: str, subject: str, body: str) -> None:
+    from_email = os.environ.get("SMTP_FROM_EMAIL", "noreply@find-x.local")
+    try:
+        resp = requests.post(
+            "https://api.mailersend.com/v1/email",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "from": {"email": from_email},
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "text": body,
+            },
+            timeout=10,
+        )
+        if resp.status_code >= 300:
+            print(f"Email send to {to_email} failed: MailerSend API {resp.status_code} {resp.text}")
     except Exception as e:
         print(f"Email send to {to_email} failed: {e!r}")
 
