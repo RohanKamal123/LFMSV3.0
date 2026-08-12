@@ -77,7 +77,6 @@ const Dashboard = () => {
                 scanner.clear().catch(err => console.error("Scanner clear fail", err));
             };
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isStaffScannerOpen, joining]);
 
     const joinStaffSession = async (token) => {

@@ -61,7 +61,6 @@ const StaffPanel = () => {
                 scanner.clear().catch(err => console.error("Scanner clear fail", err));
             };
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [view, result, processing]);
 
     const startGiveSession = async () => {

@@ -55,7 +55,6 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
                 scanner.clear().catch(() => { });
             };
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, mode, result, scanConfirmed]);
 
     if (!isOpen) return null;
