@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select, update
 from typing import List, Optional
 import json
@@ -6,12 +6,14 @@ from database import get_session
 from models import Claim, Item, ItemState, User, UserRole, QuizLog, QuizAttempt, ClaimReview
 from services.claim_agent import review_claim
 from services.auth import get_current_user
+from services.rate_limit import limiter
 from datetime import datetime
 
 router = APIRouter()
 
 @router.post("/", response_model=Claim)
-async def create_claim(claim_data: dict, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+@limiter.limit("15/minute")
+async def create_claim(request: Request, claim_data: dict, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
     # Expected claim_data: { item_id, owner_private_info, attempt_id, quiz_answers: [{question, answer}] }
     # claimant identity comes from the authenticated session, never from the body.
     claimant_id = current_user.id

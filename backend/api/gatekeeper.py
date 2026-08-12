@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlmodel import Session, select
 from database import get_session
 from models import User, UserRole, AuditLog
 from services.auth import hash_password, verify_password, create_access_token, get_current_user, create_qr_token, QR_TOKEN_EXPIRES_SECONDS
+from services.rate_limit import limiter
 
 router = APIRouter()
 
@@ -32,7 +33,8 @@ class LoginRequest(BaseModel):
 
 
 @router.post("/register")
-def register(body: RegisterRequest, session: Session = Depends(get_session)):
+@limiter.limit("5/minute")
+def register(request: Request, body: RegisterRequest, session: Session = Depends(get_session)):
     if len(body.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
 
@@ -65,7 +67,8 @@ def register(body: RegisterRequest, session: Session = Depends(get_session)):
 
 
 @router.post("/login")
-def login(body: LoginRequest, session: Session = Depends(get_session)):
+@limiter.limit("10/minute")
+def login(request: Request, body: LoginRequest, session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.uiu_id == body.uiu_id)).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid UIU ID or password.")

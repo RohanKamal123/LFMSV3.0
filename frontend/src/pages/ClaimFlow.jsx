@@ -35,7 +35,7 @@ const ClaimFlow = () => {
         }
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/quiz/generate/${itemId}`, {
+            const res = await authFetch(`/api/quiz/generate/${itemId}`, {
                 method: 'POST'
             });
             const data = await res.json();

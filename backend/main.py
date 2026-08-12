@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import _rate_limit_exceeded_handler
 from database import create_db_and_tables
+from services.rate_limit import limiter
 from dotenv import load_dotenv
 import os
 
@@ -11,6 +15,10 @@ app = FastAPI(
     description="Backend API for Find-X",
     version="1.0.0"
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS configuration - ALLOWED_ORIGINS lets a deployment add its real
 # frontend domain(s) (comma-separated) without a code change.

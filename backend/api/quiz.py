@@ -1,15 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 from typing import List, Dict
 import json
 from database import get_session
-from models import Item, ItemState, QuizAttempt
+from models import Item, ItemState, QuizAttempt, User
 from services.gemini import generate_quiz
+from services.auth import get_current_user
+from services.rate_limit import limiter
 
 router = APIRouter()
 
 @router.post("/generate/{item_id}")
-async def create_quiz_for_item(item_id: int, session: Session = Depends(get_session)):
+@limiter.limit("15/minute")
+async def create_quiz_for_item(request: Request, item_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
