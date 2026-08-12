@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, AlertCircle, Loader2, Download, Upload } from 'lucide-react';
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { QRCodeSVG } from 'qrcode.react';
-import { API_BASE_URL } from '../api_config';
-import { useAuth } from '../context/AuthContext';
+import { authFetch } from '../api_config';
 
 const StaffPanel = () => {
-    const { user } = useAuth();
     const [view, setView] = useState('hub'); // hub, take, give
     const [loading, setLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -21,7 +19,7 @@ const StaffPanel = () => {
         if (view === 'give' && sessionToken && !sessionData && !result) {
             pollTimer = setInterval(async () => {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/api/handover-session/${sessionToken}/status`);
+                    const res = await authFetch(`/api/handover-session/${sessionToken}/status`);
                     const data = await res.json();
                     if (data.status === 'joined') {
                         setSessionData(data);
@@ -70,7 +68,7 @@ const StaffPanel = () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/handover-session/start?staff_id=${user.id}`, { method: 'POST' });
+            const res = await authFetch(`/api/handover-session/start`, { method: 'POST' });
             const data = await res.json();
             setSessionToken(data.session_token);
             setView('give');
@@ -85,7 +83,7 @@ const StaffPanel = () => {
         setProcessing(true);
         setError(null);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/handover/take-by-qr?item_id=${itemId}&staff_id=${user.id}`, {
+            const res = await authFetch(`/api/handover/take-by-qr?item_id=${itemId}`, {
                 method: 'POST'
             });
             const data = await res.json();
@@ -105,7 +103,7 @@ const StaffPanel = () => {
         setProcessing(true);
         setError(null);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/handover/staff-scan-claimer?item_id=${itemId}&claimant_uiu_id=${sessionData.claimant.uiu_id}&staff_id=${user.id}`, {
+            const res = await authFetch(`/api/handover/staff-scan-claimer?item_id=${itemId}&claimant_uiu_id=${sessionData.claimant.uiu_id}`, {
                 method: 'POST'
             });
             const data = await res.json();

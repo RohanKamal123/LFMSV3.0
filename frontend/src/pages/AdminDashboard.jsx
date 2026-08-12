@@ -9,7 +9,7 @@ import {
     XAxis, YAxis, Tooltip, CartesianGrid,
     ResponsiveContainer, BarChart, Bar, AreaChart, Area, Legend
 } from 'recharts';
-import { API_BASE_URL } from '../api_config';
+import { API_BASE_URL, authFetch } from '../api_config';
 import { useAuth } from '../context/AuthContext';
 
 const AdminDashboard = () => {
@@ -34,13 +34,13 @@ const AdminDashboard = () => {
     const fetchAllData = async () => {
         try {
             const [statsRes, itemsRes, fidRes, logsRes, ticketsRes, claimsRes, reviewsRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/admin-stats/summary-stats`),
-                fetch(`${API_BASE_URL}/api/admin/items`),
+                authFetch(`/api/admin-stats/summary-stats`),
+                authFetch(`/api/admin/items`),
                 fetch(`${API_BASE_URL}/api/fast-id/all-items`),
-                fetch(`${API_BASE_URL}/api/admin-stats/login-logs`),
+                authFetch(`/api/admin-stats/login-logs`),
                 fetch(`${API_BASE_URL}/api/tickets/`),
-                fetch(`${API_BASE_URL}/api/admin/claims`),
-                fetch(`${API_BASE_URL}/api/claims/reviews`)
+                authFetch(`/api/admin/claims`),
+                authFetch(`/api/claims/reviews`)
             ]);
 
             if (statsRes.ok) setStats(await statsRes.json());
@@ -486,12 +486,12 @@ const LogsPanel = ({ logs }) => {
     );
 };
 
-const ItemsCrudPanel = ({ items, refresh, userId }) => {
+const ItemsCrudPanel = ({ items, refresh }) => {
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState({});
 
     const handleUpdate = async (id) => {
-        const res = await fetch(`${API_BASE_URL}/api/admin/items/${id}?admin_id=${userId || 1}`, {
+        const res = await authFetch(`/api/admin/items/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(form)
@@ -501,7 +501,7 @@ const ItemsCrudPanel = ({ items, refresh, userId }) => {
 
     const handleDelete = async (id) => {
         if (!confirm("Permanently erase this asset?")) return;
-        const res = await fetch(`${API_BASE_URL}/api/admin/items/${id}?admin_id=${userId || 1}`, { method: 'DELETE' });
+        const res = await authFetch(`/api/admin/items/${id}`, { method: 'DELETE' });
         if (res.ok) refresh();
     };
 
@@ -719,9 +719,9 @@ const FastIdCrudPanel = ({ items, refresh }) => {
     );
 };
 
-const FlowOverridePanel = ({ items, refresh, userId }) => {
+const FlowOverridePanel = ({ items, refresh }) => {
     const override = async (id, state) => {
-        const res = await fetch(`${API_BASE_URL}/api/admin/items/${id}?admin_id=${userId || 1}`, {
+        const res = await authFetch(`/api/admin/items/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ state })
@@ -870,9 +870,9 @@ const RECOMMENDATION_STYLES = {
     NEEDS_HUMAN_REVIEW: 'bg-orange-50 text-orange-600 border-orange-100',
 };
 
-const ClaimsReviewPanel = ({ claims, reviews, refresh, userId }) => {
+const ClaimsReviewPanel = ({ claims, reviews, refresh }) => {
     const setStatus = async (claimId, status) => {
-        const res = await fetch(`${API_BASE_URL}/api/admin/claims/${claimId}?status=${status}&admin_id=${userId || 1}`, { method: 'PUT' });
+        const res = await authFetch(`/api/admin/claims/${claimId}?status=${status}`, { method: 'PUT' });
         if (res.ok) refresh();
     };
 

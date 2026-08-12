@@ -2,15 +2,17 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select, func
 from typing import List, Any
 from database import get_session
-from models import AuditLog, Item, ItemState, User, Location, Category, Claim, SupportTicket, TicketStatus
+from models import AuditLog, Item, ItemState, User, UserRole, Location, Category, Claim, SupportTicket, TicketStatus
+from services.auth import require_role
 from datetime import datetime, timedelta
 
 RESOLUTION_ACTIONS = ["HANDOVER_DIRECT", "ROOM_110_PICKUP"]
 
 router = APIRouter()
+admin_only = require_role(UserRole.ADMIN)
 
 @router.get("/login-logs", response_model=List[Any])
-def get_login_logs(limit: int = 50, session: Session = Depends(get_session)):
+def get_login_logs(limit: int = 50, session: Session = Depends(get_session), current_user: User = Depends(admin_only)):
     query = select(AuditLog).where(AuditLog.action_type == "LOGIN").order_by(AuditLog.timestamp.desc()).limit(limit)
     logs = session.exec(query).all()
     
@@ -29,7 +31,7 @@ def get_login_logs(limit: int = 50, session: Session = Depends(get_session)):
     return result
 
 @router.get("/summary-stats")
-def get_summary_stats(session: Session = Depends(get_session)):
+def get_summary_stats(session: Session = Depends(get_session), current_user: User = Depends(admin_only)):
     # Simple counts
     states = [state.value for state in ItemState]
     summary = {}

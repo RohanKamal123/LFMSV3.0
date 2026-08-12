@@ -3,10 +3,16 @@ from datetime import datetime, timedelta
 from sqlmodel import Session, SQLModel, select
 from database import engine
 from models import (
-    User, UserRole, Category, Location, Item, ItemState, 
-    ItemImage, Claim, AuditLog, LostItem, LostItemStatus, 
+    User, UserRole, Category, Location, Item, ItemState,
+    ItemImage, Claim, AuditLog, LostItem, LostItemStatus,
     FastIDItem, FastIDType, FastIDStatus, FastIDMatch, RecoveryPath
 )
+from services.auth import hash_password
+
+# Demo-only password for every seeded account. Real registrations set their
+# own password via /api/auth/register - this exists purely so the seeded
+# demo data is still logged into for local testing.
+DEMO_PASSWORD = "findx-2026"
 
 # Realistic UIU Mock Data
 STUDENT_NAMES = [
@@ -79,10 +85,10 @@ def seed():
         # 2. Create Users
         print("--- Seeding Users ---")
         # Admin & Staff
-        admin = User(uiu_id="AD-001", name="System Administrator", email="admin@uiu.ac.bd", role=UserRole.ADMIN)
-        staff = User(uiu_id="ST-110", name="Room 110 Security", email="staff@uiu.ac.bd", role=UserRole.STAFF)
+        admin = User(uiu_id="AD-001", name="System Administrator", email="admin@uiu.ac.bd", role=UserRole.ADMIN, password_hash=hash_password(DEMO_PASSWORD))
+        staff = User(uiu_id="ST-110", name="Room 110 Security", email="staff@uiu.ac.bd", role=UserRole.STAFF, password_hash=hash_password(DEMO_PASSWORD))
         session.add_all([admin, staff])
-        
+
         # Random Students
         students = []
         for i, name in enumerate(STUDENT_NAMES):
@@ -92,7 +98,8 @@ def seed():
                 email=f"{name.lower().replace(' ', '.')}@uiu.ac.bd",
                 role=UserRole.STUDENT,
                 department=random.choice(DEPARTMENTS),
-                phone=f"01700{random.randint(100000, 999999)}"
+                phone=f"01700{random.randint(100000, 999999)}",
+                password_hash=hash_password(DEMO_PASSWORD)
             )
             session.add(student)
             students.append(student)
@@ -219,6 +226,8 @@ def seed():
 
         session.commit()
         print("✅ Database Seeded Successfully with Demo Datasets!")
+        print(f"   Demo login password for every seeded account: {DEMO_PASSWORD}")
+        print("   e.g. uiu_id=AD-001 (admin), ST-110 (staff), 011221000.. (students)")
 
 if __name__ == "__main__":
     seed()

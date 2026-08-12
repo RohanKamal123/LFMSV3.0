@@ -1,24 +1,30 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, select, update
 from typing import List, Optional
 import json
 from database import get_session
-from models import Claim, Item, ItemState, User, QuizLog, QuizAttempt, ClaimReview
+from models import Claim, Item, ItemState, User, UserRole, QuizLog, QuizAttempt, ClaimReview
 from services.claim_agent import review_claim
+from services.auth import get_current_user
 from datetime import datetime
 
 router = APIRouter()
 
 @router.post("/", response_model=Claim)
-async def create_claim(claim_data: dict, session: Session = Depends(get_session)):
-    # Expected claim_data: { item_id, claimant_id, owner_private_info, attempt_id, quiz_answers: [{question, answer}] }
+async def create_claim(claim_data: dict, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # Expected claim_data: { item_id, owner_private_info, attempt_id, quiz_answers: [{question, answer}] }
+    # claimant identity comes from the authenticated session, never from the body.
+    claimant_id = current_user.id
 
     item = session.get(Item, claim_data["item_id"])
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    if item.finder_id and item.finder_id == claim_data.get("claimant_id"):
+    if item.finder_id and item.finder_id == claimant_id:
         raise HTTPException(status_code=400, detail="You cannot claim an item you reported as found.")
+
+    if item.state != ItemState.ACTIVE:
+        raise HTTPException(status_code=409, detail="This item is no longer available to claim.")
 
     attempt = session.get(QuizAttempt, claim_data.get("attempt_id"))
     if not attempt or attempt.item_id != item.id:
@@ -50,14 +56,33 @@ async def create_claim(claim_data: dict, session: Session = Depends(get_session)
         else:
             is_verified = correct_count == total_questions
 
+    # If verified, atomically flip the item to PENDING_HANDOVER only if it's
+    # still ACTIVE. Two claimants can both pass their own quiz for the same
+    # item at nearly the same time; this UPDATE...WHERE is what actually
+    # decides which one wins - the WHERE clause is re-checked by the database
+    # at write time, so only the first writer's condition still holds and the
+    # loser's affected-row-count comes back 0, regardless of how the two
+    # requests interleaved.
+    lost_race = False
+    if is_verified:
+        result = session.exec(
+            update(Item)
+            .where(Item.id == item.id)
+            .where(Item.state == ItemState.ACTIVE)
+            .values(state=ItemState.PENDING_HANDOVER, state_updated_at=datetime.now())
+        )
+        if result.rowcount == 0:
+            lost_race = True
+            is_verified = False
+
     # Create Claim with appropriate status
     new_claim = Claim(
         item_id=claim_data["item_id"],
-        claimant_id=claim_data["claimant_id"],
+        claimant_id=claimant_id,
         owner_private_info=claim_data["owner_private_info"],
         quiz_score=correct_count,
         is_verified=is_verified,
-        status="APPROVED" if is_verified else "PENDING"
+        status="APPROVED" if is_verified else "REJECTED" if lost_race else "PENDING"
     )
     session.add(new_claim)
     session.commit()
@@ -73,14 +98,14 @@ async def create_claim(claim_data: dict, session: Session = Depends(get_session)
         )
         session.add(log)
 
-    # Update Item State if verified
-    if is_verified:
-        item.state = ItemState.PENDING_HANDOVER
-        item.state_updated_at = datetime.now()
-        session.add(item)
-
     session.commit()
     session.refresh(new_claim)
+
+    if lost_race:
+        raise HTTPException(
+            status_code=409,
+            detail="Your answers were correct, but this item was just claimed by someone else. Your attempt has been logged."
+        )
 
     # Agentic second opinion for staff review - best-effort, never blocks
     # or alters the deterministic decision above.
@@ -92,8 +117,10 @@ async def create_claim(claim_data: dict, session: Session = Depends(get_session)
     return new_claim
 
 @router.get("/reviews")
-def list_claim_reviews(session: Session = Depends(get_session)):
+def list_claim_reviews(session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
     """Returns the latest agentic review per claim, keyed by claim_id, for the staff review UI."""
+    if current_user.role not in (UserRole.STAFF, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Staff or admin access required.")
     reviews = session.exec(select(ClaimReview).order_by(ClaimReview.created_at.desc())).all()
     result = {}
     for r in reviews:
@@ -108,11 +135,16 @@ def list_claim_reviews(session: Session = Depends(get_session)):
     return result
 
 @router.get("/")
-def read_claims(claimant_id: Optional[int] = None, session: Session = Depends(get_session)):
+def read_claims(claimant_id: Optional[int] = None, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    # Students can only ever see their own claims, regardless of what
+    # claimant_id they pass - staff/admin may look up any claimant.
+    if current_user.role not in (UserRole.STAFF, UserRole.ADMIN):
+        claimant_id = current_user.id
+
     query = select(Claim)
     if claimant_id:
         query = query.where(Claim.claimant_id == claimant_id)
-    
+
     claims = session.exec(query).all()
     
     # Enrich claims with item data
@@ -132,5 +164,7 @@ def read_claims(claimant_id: Optional[int] = None, session: Session = Depends(ge
     return enriched_claims
 
 @router.get("/item/{item_id}", response_model=List[Claim])
-def read_item_claims(item_id: int, session: Session = Depends(get_session)):
+def read_item_claims(item_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    if current_user.role not in (UserRole.STAFF, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Staff or admin access required.")
     return session.exec(select(Claim).where(Claim.item_id == item_id)).all()

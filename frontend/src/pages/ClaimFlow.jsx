@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { CheckCircle, AlertCircle, Loader2, ArrowRight, Package, ShieldCheck } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL } from '../api_config';
+import { API_BASE_URL, authFetch } from '../api_config';
 
 const ClaimFlow = () => {
     const [searchParams] = useSearchParams();
@@ -71,24 +71,30 @@ const ClaimFlow = () => {
 
             const payload = {
                 item_id: parseInt(itemId),
-                claimant_id: user.id,
                 owner_private_info: ownershipInfo,
                 attempt_id: attemptId,
                 quiz_answers: quizAnswers
             };
 
-            const res = await fetch(`${API_BASE_URL}/api/claims/`, {
+            const res = await authFetch(`/api/claims/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
+            const data = await res.json();
+
             if (res.ok) {
-                const data = await res.json();
                 setVerificationResult(data);
                 setStep(3);
+            } else if (res.status === 409) {
+                // Answers may have been correct, but someone else claimed the
+                // item first, or it's no longer available - not the same as
+                // a failed quiz, so don't show the generic rejection screen.
+                alert(data.detail || "This item is no longer available to claim.");
+                navigate('/browse');
             } else {
-                alert("Failed to submit claim. Please try again.");
+                alert(data.detail || "Failed to submit claim. Please try again.");
             }
         } catch (err) {
             console.error(err);

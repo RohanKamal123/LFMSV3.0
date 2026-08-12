@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { API_BASE_URL } from '../api_config';
+import { authFetch } from '../api_config';
 
 const AuthContext = createContext(null);
 
@@ -9,24 +9,27 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const validateSession = async () => {
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
+            const token = localStorage.getItem('token');
+            if (token) {
                 try {
-                    const userData = JSON.parse(storedUser);
-                    // Validate user exists in backend
-                    const res = await fetch(`${API_BASE_URL}/api/auth/me/${userData.id}`);
+                    // Re-validate against the backend on every load - a token
+                    // surviving in localStorage doesn't mean it's still valid
+                    // (expired, or the account no longer exists).
+                    const res = await authFetch('/api/auth/me');
                     if (res.ok) {
                         const validatedUser = await res.json();
                         setUser(validatedUser);
                         localStorage.setItem('user', JSON.stringify(validatedUser));
                     } else {
-                        // Invalid session - clear it
+                        localStorage.removeItem('token');
                         localStorage.removeItem('user');
                         setUser(null);
                     }
                 } catch (error) {
-                    // On error, keep stored user but don't validate
-                    setUser(JSON.parse(storedUser));
+                    // Network error - fall back to the last known user rather
+                    // than forcing a logout, but keep the token as-is.
+                    const storedUser = localStorage.getItem('user');
+                    if (storedUser) setUser(JSON.parse(storedUser));
                 }
             }
             setLoading(false);
@@ -34,12 +37,14 @@ export const AuthProvider = ({ children }) => {
         validateSession();
     }, []);
 
-    const login = (userData) => {
+    const login = (token, userData) => {
+        localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
     };
 
     const logout = () => {
+        localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
     };

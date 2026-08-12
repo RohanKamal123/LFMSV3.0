@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL } from '../api_config';
+import { API_BASE_URL, authFetch } from '../api_config';
 import { Link, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import HandoverScanner from '../components/HandoverScanner';
@@ -62,7 +62,7 @@ const Dashboard = () => {
     const joinStaffSession = async (token) => {
         setJoining(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/handover-session/join?session_token=${token}&claimant_id=${user.id}`, {
+            const res = await authFetch(`/api/handover-session/join?session_token=${token}`, {
                 method: 'POST'
             });
             if (res.ok) {
@@ -85,7 +85,7 @@ const Dashboard = () => {
                 fetch(`${API_BASE_URL}/api/fast-id/notifications/${user.id}`),
                 fetch(`${API_BASE_URL}/api/fast-id/my-reports/${user.id}`),
                 fetch(`${API_BASE_URL}/api/items/?finder_id=${user.id}`),
-                fetch(`${API_BASE_URL}/api/claims/?claimant_id=${user.id}`)
+                authFetch(`/api/claims/`)
             ]);
 
             if (notifRes.ok) setNotifications(await notifRes.json());

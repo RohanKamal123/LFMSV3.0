@@ -35,6 +35,7 @@ class User(SQLModel, table=True):
     phone: Optional[str] = None
     role: UserRole = Field(default=UserRole.STUDENT)
     department: Optional[str] = None
+    password_hash: Optional[str] = None # bcrypt hash; unset only for not-yet-migrated legacy rows
     
     items_found: List["Item"] = Relationship(back_populates="finder")
     items_lost: List["LostItem"] = Relationship(back_populates="reporter")

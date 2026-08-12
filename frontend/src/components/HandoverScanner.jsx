@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { QrCode, X, CheckCircle2, AlertTriangle, Loader2, ShieldCheck, User, Keyboard, ScanLine } from 'lucide-react';
-import { API_BASE_URL } from '../api_config';
+import { authFetch } from '../api_config';
 
-const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, user, items }) => {
+const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
     const [scannedId, setScannedId] = useState('');
     const [selectedItemId, setSelectedItemId] = useState('');
     const [loading, setLoading] = useState(false);
@@ -56,7 +56,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, user, items }) =>
         setResult(null);
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/handover/founder-scan-claimer?item_id=${selectedItemId}&claimant_uiu_id=${scannedId}&finder_id=${user.id}`, {
+            const res = await authFetch(`/api/handover/founder-scan-claimer?item_id=${selectedItemId}&claimant_uiu_id=${scannedId}`, {
                 method: 'POST'
             });
             const data = await res.json();
