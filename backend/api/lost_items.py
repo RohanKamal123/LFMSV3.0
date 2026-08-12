@@ -76,6 +76,7 @@ def report_lost_item(payload: dict, session: Session = Depends(get_session)):
     if matches:
         session.commit()
 
+    session.refresh(item)
     return item
 
 @router.get("/", response_model=List[LostItem])

@@ -34,6 +34,7 @@ def create_ticket(payload: dict, session: Session = Depends(get_session)):
     )
     session.add(log)
     session.commit()
+    session.refresh(ticket)
 
     return ticket
 
