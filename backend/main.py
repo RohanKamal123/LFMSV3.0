@@ -5,10 +5,12 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from database import create_db_and_tables
 from services.rate_limit import limiter
+from services.logging_config import configure_logging, RequestLoggingMiddleware
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+configure_logging()
 
 app = FastAPI(
     title="Find-X: UIU Lost & Found Management System",
@@ -42,6 +44,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Added last so it's the outermost layer - sees (and times) every request
+# exactly as a client experiences it, including CORS/rate-limit handling.
+app.add_middleware(RequestLoggingMiddleware)
+
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
@@ -72,3 +78,36 @@ app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Find-X API"}
+
+@app.get("/health")
+def health_check():
+    """Real liveness/readiness check - actually queries the database rather
+    than just confirming the process is up (which / already does, and is
+    kept as Render's configured health check path so this change doesn't
+    require touching that setting too). A process that's running but can't
+    reach its database should report unhealthy, not 200."""
+    from sqlmodel import Session, text
+    from database import engine
+
+    checks = {}
+    healthy = True
+    try:
+        with Session(engine) as session:
+            session.exec(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = f"error: {e}"
+        healthy = False
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=200 if healthy else 503,
+        content={"status": "healthy" if healthy else "unhealthy", "checks": checks},
+    )
+
+@app.get("/metrics")
+def get_metrics():
+    """Basic in-process request/latency/error-rate counters - see
+    services/metrics.py for what this does and doesn't cover."""
+    from services import metrics
+    return metrics.snapshot()
