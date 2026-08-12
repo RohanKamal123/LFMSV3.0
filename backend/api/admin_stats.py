@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select, func
+from sqlalchemy import extract
 from typing import List, Any
 from database import get_session
 from models import AuditLog, Item, ItemState, User, UserRole, Location, Category, Claim, SupportTicket, TicketStatus
@@ -44,18 +45,22 @@ def get_summary_stats(session: Session = Depends(get_session), current_user: Use
     today = datetime.now().date()
     for i in range(6, -1, -1):
         target_date = today - timedelta(days=i)
-        
+        day_start = datetime.combine(target_date, datetime.min.time())
+        day_end = day_start + timedelta(days=1)
+
         # Items found on this day
         found_on_day = session.exec(
             select(func.count(Item.id))
-            .where(func.date(Item.found_at) == target_date)
+            .where(Item.found_at >= day_start)
+            .where(Item.found_at < day_end)
         ).one()
-        
+
         # Items resolved on this day
         resolved_on_day = session.exec(
             select(func.count(AuditLog.id))
             .where(AuditLog.action_type.in_(["HANDOVER_DIRECT", "ROOM_110_PICKUP"]))
-            .where(func.date(AuditLog.timestamp) == target_date)
+            .where(AuditLog.timestamp >= day_start)
+            .where(AuditLog.timestamp < day_end)
         ).one()
         
         timeline.append({
@@ -101,7 +106,7 @@ def get_summary_stats(session: Session = Depends(get_session), current_user: Use
     hourly_stats = []
     for h in range(8, 20): # Business hours
         count = session.exec(
-            select(func.count(Item.id)).where(func.strftime('%H', Item.found_at) == f"{h:02d}")
+            select(func.count(Item.id)).where(extract('hour', Item.found_at) == h)
         ).one()
         hourly_stats.append({"hour": f"{h}:00", "count": count})
 
