@@ -23,6 +23,27 @@ const Dashboard = () => {
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isStaffScannerOpen, setIsStaffScannerOpen] = useState(false);
     const [joining, setJoining] = useState(false);
+    const [qrToken, setQrToken] = useState(null);
+
+    // The handover identity QR embeds a short-lived signed token (not the
+    // raw uiu_id) so a photo of it can't be reused later - refresh it well
+    // before it expires while this screen is open.
+    useEffect(() => {
+        const fetchQrToken = async () => {
+            try {
+                const res = await authFetch('/api/auth/qr-token');
+                if (res.ok) {
+                    const data = await res.json();
+                    setQrToken(data.token);
+                }
+            } catch (err) {
+                console.error("QR token fetch failed:", err);
+            }
+        };
+        fetchQrToken();
+        const interval = setInterval(fetchQrToken, 60000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const tab = searchParams.get('tab');
@@ -154,7 +175,10 @@ const Dashboard = () => {
                 {hasApprovedClaims && (
                     <div className="card px-6 py-4 flex items-center gap-5">
                         <div className="relative p-1.5 bg-white border border-line rounded-lg">
-                            <QRCodeSVG value={JSON.stringify({ uiu_id: user.uiu_id, name: user.name })} size={56} />
+                            {qrToken
+                                ? <QRCodeSVG value={JSON.stringify({ token: qrToken })} size={56} />
+                                : <div className="w-14 h-14 flex items-center justify-center text-ink/20"><QrCode size={24} /></div>
+                            }
                         </div>
                         <div>
                             <p className="eyebrow text-accent mb-1">Claimant ID</p>

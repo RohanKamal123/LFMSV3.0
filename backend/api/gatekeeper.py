@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 from database import get_session
 from models import User, UserRole, AuditLog
-from services.auth import hash_password, verify_password, create_access_token, get_current_user
+from services.auth import hash_password, verify_password, create_access_token, get_current_user, create_qr_token, QR_TOKEN_EXPIRES_SECONDS
 
 router = APIRouter()
 
@@ -80,3 +80,11 @@ def login(body: LoginRequest, session: Session = Depends(get_session)):
 @router.get("/me")
 def get_me(user: User = Depends(get_current_user)):
     return _serialize_user(user)
+
+
+@router.get("/qr-token")
+def get_qr_token(user: User = Depends(get_current_user)):
+    """Short-lived signed token to embed in the identity QR shown for
+    handovers. Callers should re-fetch this periodically while the QR is on
+    screen - it expires quickly so a photo of it is useless shortly after."""
+    return {"token": create_qr_token(user), "expires_in": QR_TOKEN_EXPIRES_SECONDS}

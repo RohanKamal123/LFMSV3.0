@@ -13,6 +13,7 @@ from models import User, UserRole
 
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRES_DAYS = 7
+QR_TOKEN_EXPIRES_SECONDS = 90
 
 _secret = os.environ.get("JWT_SECRET")
 if not _secret:
@@ -50,6 +51,31 @@ def create_access_token(user: User) -> str:
         "iat": datetime.utcnow(),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def create_qr_token(user: User) -> str:
+    """Short-lived, purpose-scoped token for the handover identity QR. Unlike
+    the long-lived session token, this is meant to be displayed on-screen and
+    scanned by someone else, so it expires quickly and can't be reused as a
+    session credential (a different "purpose" claim than create_access_token)."""
+    payload = {
+        "sub": str(user.id),
+        "uiu_id": user.uiu_id,
+        "purpose": "handover_qr",
+        "exp": datetime.utcnow() + timedelta(seconds=QR_TOKEN_EXPIRES_SECONDS),
+        "iat": datetime.utcnow(),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def decode_qr_token(token: str) -> dict:
+    """Verifies a handover QR token and returns its payload. Raises 401/400
+    on expiry, tampering, or a token that isn't actually a QR token (e.g.
+    someone passing their own long-lived session token instead)."""
+    payload = decode_token(token)
+    if payload.get("purpose") != "handover_qr":
+        raise HTTPException(status_code=400, detail="Not a valid handover QR token.")
+    return payload
 
 
 def decode_token(token: str) -> dict:

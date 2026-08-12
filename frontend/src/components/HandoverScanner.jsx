@@ -3,8 +3,21 @@ import { Html5QrcodeScanner } from "html5-qrcode";
 import { QrCode, X, CheckCircle2, AlertTriangle, Loader2, ShieldCheck, User, Keyboard, ScanLine } from 'lucide-react';
 import { authFetch } from '../api_config';
 
+// JWTs are base64, not encrypted - this only reads the payload for a
+// friendly display label. It proves nothing; the backend independently
+// verifies the token's signature and expiry before trusting it.
+const peekUiuIdFromToken = (token) => {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.uiu_id || 'Unknown';
+    } catch (_e) {
+        return 'Unknown';
+    }
+};
+
 const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
-    const [scannedId, setScannedId] = useState('');
+    const [scannedId, setScannedId] = useState(''); // manual-entry UIU ID
+    const [scannedToken, setScannedToken] = useState(''); // signed token from a QR scan
     const [selectedItemId, setSelectedItemId] = useState('');
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
@@ -12,7 +25,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
     const [mode, setMode] = useState('camera'); // 'camera' or 'manual'
     const [scanConfirmed, setScanConfirmed] = useState(false);
 
-    // Real camera-based QR scan of the claimant's Hub QR (JSON: {uiu_id, name})
+    // Real camera-based QR scan of the claimant's Hub QR (JSON: {token})
     useEffect(() => {
         if (isOpen && mode === 'camera' && !result && !scanConfirmed) {
             const scanner = new Html5QrcodeScanner("handover-reader", {
@@ -22,16 +35,18 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
             });
 
             scanner.render((decodedText) => {
-                let uiuId = decodedText;
                 try {
                     const parsed = JSON.parse(decodedText);
-                    if (parsed.uiu_id) uiuId = parsed.uiu_id;
+                    if (parsed.token) {
+                        setScannedToken(parsed.token);
+                        setScanConfirmed(true);
+                        scanner.clear().catch(() => { });
+                        return;
+                    }
                 } catch (_e) {
-                    // Not JSON - treat the raw scanned text as the UIU ID itself.
+                    // Not JSON/no token - fall through, treated as an invalid scan below.
                 }
-                setScannedId(uiuId);
-                setScanConfirmed(true);
-                scanner.clear().catch(() => { });
+                setError("That QR isn't a valid Find-X handover code. Ask the claimant to reopen their Hub.");
             }, (_warn) => {
                 // Silently ignore scan-frame misses
             });
@@ -46,7 +61,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
     if (!isOpen) return null;
 
     const handleHandover = async () => {
-        if (!scannedId || !selectedItemId) {
+        if ((!scannedToken && !scannedId) || !selectedItemId) {
             setError("Please select an item and scan or enter the claimant's ID.");
             return;
         }
@@ -56,7 +71,11 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
         setResult(null);
 
         try {
-            const res = await authFetch(`/api/handover/founder-scan-claimer?item_id=${selectedItemId}&claimant_uiu_id=${scannedId}`, {
+            const params = new URLSearchParams({ item_id: selectedItemId });
+            if (scannedToken) params.set('claimant_token', scannedToken);
+            else params.set('claimant_uiu_id', scannedId);
+
+            const res = await authFetch(`/api/handover/founder-scan-claimer?${params.toString()}`, {
                 method: 'POST'
             });
             const data = await res.json();
@@ -76,6 +95,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
 
     const resetScan = () => {
         setScannedId('');
+        setScannedToken('');
         setScanConfirmed(false);
         setError(null);
     };
@@ -135,7 +155,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
                                                 <CheckCircle2 size={18} className="text-accent" />
                                                 <div>
                                                     <p className="text-xs text-ink/40">Scanned UIU ID</p>
-                                                    <p className="font-mono font-semibold text-ink">{scannedId}</p>
+                                                    <p className="font-mono font-semibold text-ink">{peekUiuIdFromToken(scannedToken)}</p>
                                                 </div>
                                             </div>
                                             <button onClick={resetScan} className="text-xs font-semibold text-primary">Rescan</button>

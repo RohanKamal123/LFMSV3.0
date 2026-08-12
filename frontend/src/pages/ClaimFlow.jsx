@@ -56,6 +56,7 @@ const ClaimFlow = () => {
     };
 
     const [verificationResult, setVerificationResult] = useState(null);
+    const [qrToken, setQrToken] = useState(null);
 
     const handleSubmitAnswers = async () => {
         if (Object.keys(answers).length < quizData.length) {
@@ -87,6 +88,10 @@ const ClaimFlow = () => {
             if (res.ok) {
                 setVerificationResult(data);
                 setStep(3);
+                if (data.is_verified) {
+                    const qrRes = await authFetch('/api/auth/qr-token');
+                    if (qrRes.ok) setQrToken((await qrRes.json()).token);
+                }
             } else if (res.status === 409) {
                 // Answers may have been correct, but someone else claimed the
                 // item first, or it's no longer available - not the same as
@@ -225,7 +230,10 @@ const ClaimFlow = () => {
                             <p className="ref-tag inline-block mb-8">FX&#8209;AX&#8209;{verificationResult.id}</p>
 
                             <div className="bg-white p-5 rounded-lg border border-line inline-block mb-8">
-                                <QRCodeSVG value={JSON.stringify({ uiu_id: user?.uiu_id, name: user?.name })} size={180} />
+                                {qrToken
+                                    ? <QRCodeSVG value={JSON.stringify({ token: qrToken })} size={180} />
+                                    : <div className="w-[180px] h-[180px] flex items-center justify-center text-ink/20"><Loader2 className="animate-spin" size={32} /></div>
+                                }
                             </div>
 
                             <div className="bg-ink p-6 rounded-lg text-left text-white mb-6">

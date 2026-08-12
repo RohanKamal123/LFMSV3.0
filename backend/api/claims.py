@@ -114,6 +114,11 @@ async def create_claim(claim_data: dict, session: Session = Depends(get_session)
     except Exception as e:
         print(f"Claim review agent errored for claim {new_claim.id}: {e!r}")
 
+    # review_claim shares this session and may commit its own writes, which
+    # (depending on session state) can leave new_claim expired going into
+    # response serialization. Force a definite reload so the response is
+    # never intermittently empty regardless of what review_claim did.
+    session.refresh(new_claim)
     return new_claim
 
 @router.get("/reviews")
