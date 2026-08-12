@@ -2,8 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlmodel import Session, select
 from typing import List, Optional
 import os
-import uuid
-import shutil
 from datetime import datetime
 
 from database import get_session
@@ -13,6 +11,7 @@ from models import (
 )
 from services.id_reader import extract_id_from_image, validate_id_format
 from services.notify import send_notification
+from services.uploads import save_validated_image
 
 router = APIRouter()
 
@@ -27,15 +26,9 @@ async def report_found_id(
     description: Optional[str] = Form(None),
     session: Session = Depends(get_session)
 ):
-    # 1. Save File
-    file_ext = file.filename.split(".")[-1]
-    file_name = f"{uuid.uuid4()}.{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, file_name)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    relative_path = f"/uploads/ids/{file_name}"
+    # 1. Save File (validated: real image, size-capped, EXIF stripped)
+    file_path = await save_validated_image(file, UPLOAD_DIR)
+    relative_path = f"/uploads/ids/{os.path.basename(file_path)}"
 
     # 2. Extract ID using AI
     extraction_result = await extract_id_from_image(file_path)
@@ -127,9 +120,10 @@ async def report_found_id(
     )
     session.add(log)
     session.commit()
+    session.refresh(item)
 
     return {
-        "item": item, 
+        "item": item,
         "extraction": extraction_result,
         "match_found": match_found
     }
@@ -205,6 +199,7 @@ async def report_lost_id(
 
         match_found = True
         session.commit()
+        session.refresh(item)
 
     return {"item": item, "match_found": match_found}
 
@@ -340,6 +335,7 @@ async def update_fast_id_item(
                 # For now just confirming match found
                 match_found = True
                 session.commit()
+                session.refresh(item)
 
     return {"status": "success", "item": item, "match_found": match_found}
 
