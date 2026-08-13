@@ -19,6 +19,8 @@ frontend/node_modules/
 dist/
 build/
 .eslintcache
+.env.local
+.env.*.local
 
 # Project Specific
 backend/uploads/
