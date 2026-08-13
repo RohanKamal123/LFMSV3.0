@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from database import get_session
 from models import User, UserRole, AuditLog
 from services.auth import hash_password, verify_password, create_access_token, get_current_user, create_qr_token, QR_TOKEN_EXPIRES_SECONDS
@@ -9,7 +9,14 @@ from services.rate_limit import limiter
 router = APIRouter()
 
 
-def _serialize_user(user: User) -> dict:
+def _serialize_user(user: User, session: Session) -> dict:
+    # Counts LOGIN audit entries (not REGISTER) so a user who just created
+    # their account - but hasn't been through the separate /login call yet -
+    # still reads as "first time" too. Used client-side to show "Welcome"
+    # vs "Welcome back" without a dedicated column.
+    login_count = session.exec(
+        select(func.count()).select_from(AuditLog).where(AuditLog.actor_id == user.id).where(AuditLog.action_type == "LOGIN")
+    ).one()
     return {
         "id": user.id,
         "uiu_id": user.uiu_id,
@@ -17,6 +24,7 @@ def _serialize_user(user: User) -> dict:
         "email": user.email,
         "phone": user.phone,
         "role": user.role.value if hasattr(user.role, "value") else user.role,
+        "is_first_login": login_count <= 1,
     }
 
 
@@ -63,7 +71,7 @@ def register(request: Request, body: RegisterRequest, session: Session = Depends
     session.commit()
 
     token = create_access_token(user)
-    return {"token": token, "user": _serialize_user(user)}
+    return {"token": token, "user": _serialize_user(user, session)}
 
 
 @router.post("/login")
@@ -77,12 +85,12 @@ def login(request: Request, body: LoginRequest, session: Session = Depends(get_s
     session.commit()
 
     token = create_access_token(user)
-    return {"token": token, "user": _serialize_user(user)}
+    return {"token": token, "user": _serialize_user(user, session)}
 
 
 @router.get("/me")
-def get_me(user: User = Depends(get_current_user)):
-    return _serialize_user(user)
+def get_me(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    return _serialize_user(user, session)
 
 
 @router.get("/qr-token")

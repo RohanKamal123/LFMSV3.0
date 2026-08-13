@@ -158,8 +158,19 @@ const Dashboard = () => {
         </div>
     );
 
-    const hasApprovedClaims = claims.some(c => c.status === 'APPROVED' || c.is_verified);
+    // claim.status/is_verified are set once at claim time and never revisited -
+    // once the underlying item is actually RESOLVED (handed over, either path)
+    // or ARCHIVED, this claim is done and shouldn't keep prompting for pickup.
+    const hasApprovedClaims = claims.some(c =>
+        (c.status === 'APPROVED' || c.is_verified) &&
+        c.item?.state !== 'RESOLVED' && c.item?.state !== 'ARCHIVED'
+    );
     const activeReportsNeedingDropoff = foundItems.filter(i => i.state === 'ACTIVE' || i.state === 'PENDING_HANDOVER' || i.state === 'OVERDUE_SUBMISSION');
+    // Path A only makes sense once someone has actually claimed one of this
+    // user's found reports (there's a claimant to scan); Path B only once
+    // this user has an approved claim of their own waiting at Room 110.
+    const hasPendingHandoverAsFinder = foundItems.some(i => i.state === 'PENDING_HANDOVER');
+    const showHandoverCard = hasPendingHandoverAsFinder || hasApprovedClaims;
 
     return (
         <div className="max-w-7xl mx-auto flex flex-col gap-8">
@@ -252,11 +263,11 @@ const Dashboard = () => {
                             </div>
                         </Link>
 
-                        <div className="grid lg:grid-cols-2 gap-6">
+                        <div className={`grid gap-6 ${showHandoverCard ? 'lg:grid-cols-2' : ''}`}>
                             {/* Welcome Card */}
                             <div className="bg-ink rounded-xl p-8 text-white flex flex-col justify-between">
                                 <div>
-                                    <p className="eyebrow text-white/40 mb-3">Welcome back</p>
+                                    <p className="eyebrow text-white/40 mb-3">{user.is_first_login ? 'Welcome' : 'Welcome back'}</p>
                                     <h3 className="font-display text-3xl font-bold mb-3">{user.name.split(' ')[0]}</h3>
                                     <p className="text-white/50 text-sm max-w-sm mb-8">
                                         Check your claims or start a new report below.
@@ -272,34 +283,41 @@ const Dashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Action Scanner Card - both handover paths */}
-                            <div className="card p-8 flex flex-col justify-center">
-                                <div className="flex items-center gap-3 mb-5">
-                                    <div className="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center shrink-0">
-                                        <ScanLine size={22} />
+                            {/* Action Scanner Card - only relevant once there's an actual
+                                handover to complete (a claimant to scan, or a pickup to join) */}
+                            {showHandoverCard && (
+                                <div className="card p-8 flex flex-col justify-center">
+                                    <div className="flex items-center gap-3 mb-5">
+                                        <div className="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center shrink-0">
+                                            <ScanLine size={22} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-display text-lg font-bold text-ink">Handover scan</h4>
+                                            <p className="text-ink/40 text-xs">Real camera QR scanning</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 className="font-display text-lg font-bold text-ink">Handover scan</h4>
-                                        <p className="text-ink/40 text-xs">Real camera QR scanning</p>
+                                    <div className="space-y-2">
+                                        {hasPendingHandoverAsFinder && (
+                                            <button
+                                                onClick={() => setIsScannerOpen(true)}
+                                                className="btn-ink w-full py-3 text-sm justify-between"
+                                            >
+                                                Hand over directly (Path A)
+                                                <ArrowRight size={15} />
+                                            </button>
+                                        )}
+                                        {hasApprovedClaims && (
+                                            <button
+                                                onClick={() => setIsStaffScannerOpen(true)}
+                                                className="w-full py-3 px-5 text-sm font-semibold text-ink border border-line rounded-lg hover:border-ink/30 transition-all flex items-center justify-between"
+                                            >
+                                                Join staff pickup session (Path B)
+                                                <QrCode size={15} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <button
-                                        onClick={() => setIsScannerOpen(true)}
-                                        className="btn-ink w-full py-3 text-sm justify-between"
-                                    >
-                                        Hand over directly (Path A)
-                                        <ArrowRight size={15} />
-                                    </button>
-                                    <button
-                                        onClick={() => setIsStaffScannerOpen(true)}
-                                        className="w-full py-3 px-5 text-sm font-semibold text-ink border border-line rounded-lg hover:border-ink/30 transition-all flex items-center justify-between"
-                                    >
-                                        Join staff pickup session (Path B)
-                                        <QrCode size={15} />
-                                    </button>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -345,11 +363,20 @@ const Dashboard = () => {
                                         </div>
 
                                         <div className="mt-auto">
-                                            {(claim.status === 'APPROVED' || claim.is_verified) ? (
+                                            {claim.item?.state === 'RESOLVED' ? (
+                                                <div className="bg-accent/5 p-3 rounded-lg border border-accent/20 flex items-start gap-2.5">
+                                                    <CheckCircle2 size={15} className="text-accent mt-0.5 shrink-0" />
+                                                    <p className="text-xs text-accent/90 font-medium leading-snug">
+                                                        Resolved &mdash; you&apos;ve received this item.
+                                                    </p>
+                                                </div>
+                                            ) : (claim.status === 'APPROVED' || claim.is_verified) ? (
                                                 <div className="bg-accent/5 p-3 rounded-lg border border-accent/20 flex items-start gap-2.5">
                                                     <ShieldCheck size={15} className="text-accent mt-0.5 shrink-0" />
                                                     <p className="text-xs text-accent/90 font-medium leading-snug">
-                                                        Verified &mdash; show your Hub QR at Room 110 for pickup.
+                                                        {claim.item?.state === 'READY_FOR_PICKUP'
+                                                            ? <>Verified &mdash; show your Hub QR at Room 110 for pickup.</>
+                                                            : <>Verified &mdash; waiting on the finder to hand this over, or drop-off at Room 110.</>}
                                                     </p>
                                                 </div>
                                             ) : (
@@ -386,12 +413,14 @@ const Dashboard = () => {
                                 <h2 className="font-display text-2xl font-bold text-ink">Reported Items</h2>
                                 <p className="eyebrow mt-1">{foundItems.length + fastIdReports.length} logs</p>
                             </div>
-                            <button
-                                onClick={() => setIsScannerOpen(true)}
-                                className="btn-ink text-sm"
-                            >
-                                <QrCode size={15} /> Handover scanner
-                            </button>
+                            {hasPendingHandoverAsFinder && (
+                                <button
+                                    onClick={() => setIsScannerOpen(true)}
+                                    className="btn-ink text-sm"
+                                >
+                                    <QrCode size={15} /> Handover scanner
+                                </button>
+                            )}
                         </div>
 
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">

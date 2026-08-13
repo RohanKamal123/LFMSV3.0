@@ -161,6 +161,7 @@ class SupportTicket(SQLModel, table=True):
     category: TicketCategory = Field(default=TicketCategory.OTHER)
     description: str
     item_id: Optional[int] = Field(default=None, foreign_key="item.id") # optional: ties a ticket to a specific item
+    attachment_url: Optional[str] = None # image or short video, evidence for the ticket
     status: TicketStatus = Field(default=TicketStatus.OPEN)
     staff_response: Optional[str] = None
     resolved_by: Optional[int] = Field(default=None, foreign_key="user.id")

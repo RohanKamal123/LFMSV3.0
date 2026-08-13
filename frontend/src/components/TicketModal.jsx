@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { LifeBuoy, X, AlertTriangle, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { LifeBuoy, X, AlertTriangle, Loader2, CheckCircle2, Clock, Paperclip, Film } from 'lucide-react';
 import { API_BASE_URL } from '../api_config';
 
 const CATEGORIES = [
@@ -17,15 +17,33 @@ const STATUS_STYLES = {
     CLOSED: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
-const TicketModal = ({ isOpen, onClose, user }) => {
+const isVideoUrl = (url) => /\.(mp4|webm|mov)$/i.test(url || '');
+
+// prefill lets a caller (e.g. the rejected-claim escalation screen) open
+// this already pointed at the right subject/category/item, instead of the
+// user retyping context that already exists on screen.
+const TicketModal = ({ isOpen, onClose, user, prefill }) => {
     const [tab, setTab] = useState('new');
     const [subject, setSubject] = useState('');
     const [category, setCategory] = useState('OTHER');
     const [description, setDescription] = useState('');
+    const [itemId, setItemId] = useState(null);
+    const [attachmentUrl, setAttachmentUrl] = useState(null);
+    const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const [myTickets, setMyTickets] = useState([]);
+    const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        if (isOpen && prefill) {
+            setSubject(prefill.subject || '');
+            setCategory(prefill.category || 'OTHER');
+            setDescription(prefill.description || '');
+            setItemId(prefill.item_id ?? null);
+        }
+    }, [isOpen, prefill]);
 
     const loadMyTickets = () => {
         fetch(`${API_BASE_URL}/api/tickets/mine/${user.id}`)
@@ -40,6 +58,28 @@ const TicketModal = ({ isOpen, onClose, user }) => {
     }, [isOpen, tab]);
 
     if (!isOpen) return null;
+
+    const handleAttachmentChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploading(true);
+        setError(null);
+        try {
+            const body = new FormData();
+            body.append('file', file);
+            const res = await fetch(`${API_BASE_URL}/api/upload/attachment`, { method: 'POST', body });
+            const data = await res.json();
+            if (res.ok) {
+                setAttachmentUrl(data.url);
+            } else {
+                setError(data.detail || 'Failed to upload attachment.');
+            }
+        } catch (err) {
+            setError('Connection error while uploading attachment.');
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleSubmit = async () => {
         if (!subject.trim() || !description.trim()) {
@@ -57,6 +97,8 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                     subject,
                     category,
                     description,
+                    item_id: itemId,
+                    attachment_url: attachmentUrl,
                 }),
             });
             if (res.ok) {
@@ -64,6 +106,8 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                 setSubject('');
                 setDescription('');
                 setCategory('OTHER');
+                setItemId(null);
+                setAttachmentUrl(null);
             } else {
                 const data = await res.json();
                 setError(data.detail || 'Failed to submit ticket.');
@@ -79,6 +123,7 @@ const TicketModal = ({ isOpen, onClose, user }) => {
         setSuccess(false);
         setError(null);
         setTab('new');
+        setAttachmentUrl(null);
         onClose();
     };
 
@@ -153,6 +198,45 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                                         className="input-field resize-none"
                                     />
                                 </div>
+                                <div>
+                                    <label className="eyebrow block mb-2">Attachment (optional)</label>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*,video/mp4,video/webm,video/quicktime"
+                                        className="hidden"
+                                        onChange={handleAttachmentChange}
+                                    />
+                                    {attachmentUrl ? (
+                                        <div className="relative rounded-lg overflow-hidden border border-line w-32">
+                                            {isVideoUrl(attachmentUrl) ? (
+                                                <div className="w-32 h-24 bg-paper flex flex-col items-center justify-center gap-1">
+                                                    <Film size={20} className="text-ink/40" />
+                                                    <span className="text-[9px] text-ink/40 font-semibold">Video attached</span>
+                                                </div>
+                                            ) : (
+                                                <img src={`${API_BASE_URL}${attachmentUrl}`} alt="Attachment" className="w-32 h-24 object-cover" />
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => { setAttachmentUrl(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                                className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full hover:bg-black/70 transition-colors"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current.click()}
+                                            disabled={uploading}
+                                            className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-line rounded-lg text-sm font-medium text-ink/50 hover:border-primary hover:text-primary transition-colors"
+                                        >
+                                            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Paperclip size={14} />}
+                                            {uploading ? 'Uploading...' : 'Attach image or video'}
+                                        </button>
+                                    )}
+                                </div>
 
                                 {error && (
                                     <div className="bg-red-50 p-4 rounded-lg border border-red-100 flex items-start gap-3">
@@ -163,7 +247,7 @@ const TicketModal = ({ isOpen, onClose, user }) => {
 
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={loading}
+                                    disabled={loading || uploading}
                                     className="btn-primary w-full py-3.5"
                                 >
                                     {loading ? <Loader2 className="animate-spin" /> : 'Submit ticket'}
@@ -186,6 +270,15 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                                         </span>
                                     </div>
                                     <p className="text-xs text-ink/50 mb-2">{t.description}</p>
+                                    {t.attachment_url && (
+                                        isVideoUrl(t.attachment_url) ? (
+                                            <a href={`${API_BASE_URL}${t.attachment_url}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary mb-2">
+                                                <Film size={12} /> View attached video
+                                            </a>
+                                        ) : (
+                                            <img src={`${API_BASE_URL}${t.attachment_url}`} alt="Attachment" className="w-20 h-16 object-cover rounded-lg border border-line mb-2" />
+                                        )
+                                    )}
                                     {t.staff_response && (
                                         <div className="mt-3 pt-3 divider-dashed flex items-start gap-2">
                                             <LifeBuoy size={14} className="text-accent shrink-0 mt-0.5" />

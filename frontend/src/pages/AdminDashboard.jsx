@@ -3,7 +3,7 @@ import {
     BarChart3, Users, Archive, AlertTriangle,
     Edit3, Trash2, X, CheckCircle2,
     Database, Layers, Eye, UserCheck, Tags,
-    Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag
+    Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag, Film
 } from 'lucide-react';
 import {
     XAxis, YAxis, Tooltip, CartesianGrid,
@@ -836,6 +836,16 @@ const TicketsPanel = ({ tickets, refresh, userId }) => {
                                 #{t.id} &middot; {new Date(t.created_at).toLocaleDateString()}
                             </div>
                         </div>
+
+                        {t.attachment_url && (
+                            /\.(mp4|webm|mov)$/i.test(t.attachment_url) ? (
+                                <a href={`${API_BASE_URL}${t.attachment_url}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-black text-indigo-600 mb-4">
+                                    <Film size={14} /> View attached video
+                                </a>
+                            ) : (
+                                <img src={`${API_BASE_URL}${t.attachment_url}`} alt="Attachment" className="w-24 h-20 object-cover rounded-xl border border-line mb-4" />
+                            )
+                        )}
 
                         {t.staff_response && (
                             <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 mb-4 flex gap-3">

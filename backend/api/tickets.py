@@ -21,6 +21,7 @@ def create_ticket(payload: dict, session: Session = Depends(get_session)):
         category=payload.get("category", TicketCategory.OTHER),
         description=payload["description"],
         item_id=payload.get("item_id"),
+        attachment_url=payload.get("attachment_url"),
     )
     session.add(ticket)
     session.commit()

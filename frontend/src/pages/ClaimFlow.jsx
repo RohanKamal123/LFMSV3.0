@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { CheckCircle, AlertCircle, Loader2, ArrowRight, Package, ShieldCheck } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2, ArrowRight, Package, ShieldCheck, MessageSquare, Phone } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL, authFetch } from '../api_config';
+import TicketModal from '../components/TicketModal';
+
+const ADMIN_PHONE = '01751549994';
 
 const ClaimFlow = () => {
     const [searchParams] = useSearchParams();
@@ -18,6 +21,7 @@ const ClaimFlow = () => {
     const [quizData, setQuizData] = useState([]);
     const [answers, setAnswers] = useState({});
     const [attemptId, setAttemptId] = useState(null);
+    const [escalationOpen, setEscalationOpen] = useState(false);
 
     useEffect(() => {
         if (itemId) {
@@ -114,6 +118,15 @@ const ClaimFlow = () => {
             <Package size={48} className="mx-auto mb-4 text-ink/15" />
             <h2 className="font-display text-xl font-bold text-ink mb-3">No item selected</h2>
             <p className="text-ink/50 mb-6">Please select an item from the feed to start a claim.</p>
+            <button onClick={() => navigate('/browse')} className="btn-primary">Go to registry</button>
+        </div>
+    );
+
+    if (user?.role === 'ADMIN') return (
+        <div className="text-center py-20">
+            <AlertCircle size={48} className="mx-auto mb-4 text-primary/40" />
+            <h2 className="font-display text-xl font-bold text-ink mb-3">Admin accounts can&apos;t file claims</h2>
+            <p className="text-ink/50 mb-6">Claiming is a student-facing flow. Use Items CRUD or Flow CRUD in the admin dashboard instead.</p>
             <button onClick={() => navigate('/browse')} className="btn-primary">Go to registry</button>
         </div>
     );
@@ -271,9 +284,41 @@ const ClaimFlow = () => {
                             <button onClick={() => setStep(1)} className="btn-primary w-full py-3">
                                 Try again
                             </button>
+
+                            <div className="mt-6 pt-6 divider-dashed">
+                                <p className="text-xs font-semibold text-ink/50 mb-3">Still think this is yours? Reach staff directly:</p>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <button
+                                        onClick={() => setEscalationOpen(true)}
+                                        className="flex-1 py-3 px-4 text-sm font-semibold text-ink border border-line rounded-lg hover:border-ink/30 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <MessageSquare size={15} /> Message admin
+                                    </button>
+                                    <a
+                                        href={`tel:${ADMIN_PHONE}`}
+                                        className="flex-1 py-3 px-4 text-sm font-semibold text-ink border border-line rounded-lg hover:border-ink/30 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Phone size={15} /> Call {ADMIN_PHONE}
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
+            )}
+
+            {user && (
+                <TicketModal
+                    isOpen={escalationOpen}
+                    onClose={() => setEscalationOpen(false)}
+                    user={user}
+                    prefill={{
+                        subject: `Claim dispute: ${item?.title || `item #${itemId}`}`,
+                        category: 'ITEM_ISSUE',
+                        description: `My claim on "${item?.title || `item #${itemId}`}" (ref #${itemId}) was rejected by the automated quiz (score ${verificationResult?.quiz_score || 0}). I still believe this item is mine - please review manually.\n\n${ownershipInfo}`,
+                        item_id: itemId ? parseInt(itemId) : null,
+                    }}
+                />
             )}
         </div>
     );

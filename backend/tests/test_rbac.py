@@ -52,3 +52,25 @@ def test_claims_require_auth(server):
 def test_quiz_generation_requires_auth(server):
     r = requests.post(f"{server}/api/quiz/generate/1")
     assert r.status_code == 403
+
+
+def test_admin_cannot_generate_quiz(server, db_engine):
+    finder_uiu, _, finder = register_student(server)
+    item_id = create_found_item(db_engine, finder["id"])
+
+    admin_uiu = make_staff_or_admin(db_engine, "ADMIN")
+    admin_token, _ = login(server, admin_uiu)
+
+    r = requests.post(f"{server}/api/quiz/generate/{item_id}", headers=auth_headers(admin_token))
+    assert r.status_code == 403
+
+
+def test_admin_cannot_file_claim(server, db_engine):
+    finder_uiu, _, finder = register_student(server)
+    item_id = create_found_item(db_engine, finder["id"])
+
+    admin_uiu = make_staff_or_admin(db_engine, "ADMIN")
+    admin_token, _ = login(server, admin_uiu)
+
+    r = requests.post(f"{server}/api/claims/", json={"item_id": item_id}, headers=auth_headers(admin_token))
+    assert r.status_code == 403

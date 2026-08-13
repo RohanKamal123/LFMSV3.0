@@ -18,6 +18,9 @@ async def create_claim(request: Request, claim_data: dict, session: Session = De
     # claimant identity comes from the authenticated session, never from the body.
     claimant_id = current_user.id
 
+    if current_user.role == UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin accounts cannot file claims.")
+
     item = session.get(Item, claim_data["item_id"])
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")

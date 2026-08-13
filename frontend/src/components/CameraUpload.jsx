@@ -30,7 +30,9 @@ const CameraUpload = ({ onImageCapture }) => {
             <input
                 type="file"
                 accept="image/*"
-                capture="environment" // Opens camera on mobile
+                // No `capture` attribute - that forces mobile browsers straight into
+                // the camera app and hides the gallery/file option entirely. Leaving
+                // it off lets the OS show its normal chooser (camera, gallery, files).
                 className="hidden"
                 ref={fileInputRef}
                 onChange={handleFileChange}
@@ -44,8 +46,8 @@ const CameraUpload = ({ onImageCapture }) => {
                     <div className="bg-orange-100 p-4 rounded-full mb-3 text-primary">
                         <Camera size={32} />
                     </div>
-                    <p className="text-sm font-medium text-gray-700">Tap to Take Photo</p>
-                    <p className="text-xs text-gray-500 mt-1">or upload from gallery</p>
+                    <p className="text-sm font-medium text-gray-700">Take a photo or choose one</p>
+                    <p className="text-xs text-gray-500 mt-1">Camera, gallery, or local files</p>
                 </div>
             ) : (
                 <div className="relative rounded-xl overflow-hidden shadow-md">

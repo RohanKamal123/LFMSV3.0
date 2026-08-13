@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 from typing import List, Dict
 import json
 from database import get_session
-from models import Item, ItemState, QuizAttempt, User
+from models import Item, ItemState, QuizAttempt, User, UserRole
 from services.gemini import generate_quiz
 from services.auth import get_current_user
 from services.rate_limit import limiter
@@ -13,6 +13,9 @@ router = APIRouter()
 @router.post("/generate/{item_id}")
 @limiter.limit("15/minute")
 async def create_quiz_for_item(request: Request, item_id: int, session: Session = Depends(get_session), current_user: User = Depends(get_current_user)):
+    if current_user.role == UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin accounts cannot file claims.")
+
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")

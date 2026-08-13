@@ -267,7 +267,7 @@ const ItemCard = ({ item, locations, user, isAdmin, onOpen, onClaim }) => {
                             <span className="text-sm font-semibold text-ink/30 flex items-center gap-1.5">
                                 <UserCheck size={14} /> Your report
                             </span>
-                        ) : item.state === 'ACTIVE' ? (
+                        ) : item.state === 'ACTIVE' && !isAdmin ? (
                             <button
                                 onClick={(e) => { e.stopPropagation(); onClaim(); }}
                                 className="btn-primary !py-2 !px-4 text-sm flex items-center gap-1.5"
@@ -470,7 +470,7 @@ const ItemDetailModal = ({ type, id, user, isStaffOrAdmin, isAdmin, locations, c
                                 <Mail size={14} /> Contact {type === 'FOUND' ? 'finder' : 'reporter'}
                             </button>
                         )}
-                        {type === 'FOUND' && !isOwnReport && state === 'ACTIVE' && (
+                        {type === 'FOUND' && !isOwnReport && !isAdmin && state === 'ACTIVE' && (
                             <button onClick={onClaim} className="btn-primary !py-2 !px-4 text-sm flex items-center gap-1.5">
                                 Claim item <ArrowRight size={14} />
                             </button>
