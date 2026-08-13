@@ -67,6 +67,41 @@ async def lookup_visitor(token: str, session: Session = Depends(get_session), cu
     }
 
 
+@router.get("/queue")
+async def room110_queue(session: Session = Depends(get_session), current_user: User = Depends(require_role(UserRole.STAFF, UserRole.ADMIN))):
+    """
+    Everything pending at Room 110 right now, across every visitor - no
+    scanning needed on staff's side. A finder shows up as soon as their item
+    hits PENDING_HANDOVER/OVERDUE_SUBMISSION; a claimant shows up as soon as
+    their claim is approved and the item reaches READY_FOR_PICKUP. Staff
+    just works the list.
+    """
+    dropoff_items = session.exec(
+        select(Item).where(Item.state.in_([ItemState.PENDING_HANDOVER, ItemState.OVERDUE_SUBMISSION]))
+    ).all()
+    dropoffs = []
+    for item in dropoff_items:
+        finder = session.get(User, item.finder_id) if item.finder_id else None
+        dropoffs.append({
+            **_item_summary(item),
+            "person": {"name": finder.name, "uiu_id": finder.uiu_id} if finder else None,
+        })
+
+    approved_claims = session.exec(select(Claim).where(Claim.status == "APPROVED")).all()
+    pickups = []
+    for claim in approved_claims:
+        item = session.get(Item, claim.item_id)
+        if not item or item.state != ItemState.READY_FOR_PICKUP:
+            continue
+        claimant = session.get(User, claim.claimant_id)
+        pickups.append({
+            **_item_summary(item),
+            "person": {"name": claimant.name, "uiu_id": claimant.uiu_id} if claimant else None,
+        })
+
+    return {"dropoffs": dropoffs, "pickups": pickups}
+
+
 @router.get("/serial/{item_id}")
 async def lookup_by_serial(item_id: int, session: Session = Depends(get_session), current_user: User = Depends(require_role(UserRole.STAFF, UserRole.ADMIN))):
     """

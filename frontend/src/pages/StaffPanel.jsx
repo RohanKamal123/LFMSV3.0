@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, AlertCircle, Loader2, ScanLine, QrCode, PackageCheck, FilePlus, Hash, Search } from 'lucide-react';
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, CheckCircle2, AlertCircle, Loader2, ListChecks, QrCode, PackageCheck, FilePlus, Hash, Search, RefreshCw, User } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { authFetch, API_BASE_URL, ROOM_110_QR_VALUE } from '../api_config';
 import CameraUpload from '../components/CameraUpload';
@@ -12,12 +11,15 @@ const ItemThumb = ({ item }) => (
 );
 
 const StaffPanel = () => {
-    const [view, setView] = useState('hub'); // hub, checkin-qr, scan, quick-report, search-serial
-    const [scanError, setScanError] = useState(null);
-    const [looking, setLooking] = useState(false);
-    const [visitorData, setVisitorData] = useState(null); // { visitor, dropoffs, pickups }
+    const [view, setView] = useState('hub'); // hub, checkin-qr, queue, quick-report, search-serial
     const [processingId, setProcessingId] = useState(null);
     const [actionError, setActionError] = useState(null);
+
+    // --- Pending queue (no scanning - just what's already sitting at
+    // Room 110, pulled straight from item/claim state) ---
+    const [queueData, setQueueData] = useState(null); // { dropoffs, pickups }
+    const [queueLoading, setQueueLoading] = useState(false);
+    const [queueError, setQueueError] = useState(null);
 
     // --- Quick report (non-user dropoff) ---
     const [qrTitle, setQrTitle] = useState('');
@@ -35,56 +37,27 @@ const StaffPanel = () => {
     const [releasing, setReleasing] = useState(false);
     const [releaseDone, setReleaseDone] = useState(false);
 
-    // --- QR SCANNER (visitor's personal identity QR, shown on their phone
-    // after they scan the fixed Room 110 QR themselves) ---
-    useEffect(() => {
-        if (view === 'scan' && !visitorData && !looking) {
-            const scanner = new Html5QrcodeScanner("reader", {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            });
-
-            scanner.render(async (decodedText) => {
-                if (decodedText === ROOM_110_QR_VALUE) {
-                    setScanError("That's the check-in QR - scan the visitor's personal QR on their phone instead.");
-                    return;
-                }
-                scanner.clear();
-                await lookupVisitor(decodedText);
-            }, (_warn) => {
-                // Silently ignore scan errors
-            });
-
-            return () => {
-                scanner.clear().catch(err => console.error("Scanner clear fail", err));
-            };
-        }
-    }, [view, visitorData, looking]);
-
-    const lookupVisitor = async (rawToken) => {
-        setLooking(true);
-        setScanError(null);
+    const loadQueue = useCallback(async () => {
+        setQueueLoading(true);
+        setQueueError(null);
         try {
-            let token = rawToken;
-            try {
-                const parsed = JSON.parse(rawToken);
-                if (parsed?.token) token = parsed.token;
-            } catch { /* not JSON, use as-is */ }
-
-            const res = await authFetch(`/api/handover/lookup?token=${encodeURIComponent(token)}`);
+            const res = await authFetch('/api/handover/queue');
             const data = await res.json();
             if (res.ok) {
-                setVisitorData(data);
+                setQueueData(data);
             } else {
-                setScanError(data.detail || "Couldn't identify that visitor.");
+                setQueueError(data.detail || "Couldn't load the queue.");
             }
         } catch (err) {
-            setScanError("API Error. Check connection.");
+            setQueueError("API Error. Check connection.");
         } finally {
-            setLooking(false);
+            setQueueLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (view === 'queue') loadQueue();
+    }, [view, loadQueue]);
 
     const confirmDropoff = async (itemId) => {
         setProcessingId(itemId);
@@ -93,7 +66,7 @@ const StaffPanel = () => {
             const res = await authFetch(`/api/handover/staff-scan-tag?item_id=${itemId}`, { method: 'POST' });
             const data = await res.json();
             if (res.ok) {
-                setVisitorData(v => ({ ...v, dropoffs: v.dropoffs.filter(i => i.id !== itemId) }));
+                setQueueData(q => ({ ...q, dropoffs: q.dropoffs.filter(i => i.id !== itemId) }));
             } else {
                 setActionError(data.detail || "Drop-off confirmation failed.");
             }
@@ -104,14 +77,14 @@ const StaffPanel = () => {
         }
     };
 
-    const confirmPickup = async (itemId) => {
-        setProcessingId(itemId);
+    const confirmPickup = async (item) => {
+        setProcessingId(item.id);
         setActionError(null);
         try {
-            const res = await authFetch(`/api/handover/staff-scan-claimer?item_id=${itemId}&claimant_uiu_id=${visitorData.visitor.uiu_id}`, { method: 'POST' });
+            const res = await authFetch(`/api/handover/staff-scan-claimer?item_id=${item.id}&claimant_uiu_id=${item.person.uiu_id}`, { method: 'POST' });
             const data = await res.json();
             if (res.ok) {
-                setVisitorData(v => ({ ...v, pickups: v.pickups.filter(i => i.id !== itemId) }));
+                setQueueData(q => ({ ...q, pickups: q.pickups.filter(i => i.id !== item.id) }));
             } else {
                 setActionError(data.detail || "Release verification failed.");
             }
@@ -122,16 +95,10 @@ const StaffPanel = () => {
         }
     };
 
-    const scanNextVisitor = () => {
-        setVisitorData(null);
-        setScanError(null);
-        setActionError(null);
-    };
-
     const reset = () => {
         setView('hub');
-        setVisitorData(null);
-        setScanError(null);
+        setQueueData(null);
+        setQueueError(null);
         setActionError(null);
         setQrTitle(''); setQrDetail(''); setQrImage(null); setQrError(null); setQrResult(null);
         setSerialInput(''); setSerialItem(null); setSerialError(null); setReleaseDone(false);
@@ -237,15 +204,15 @@ const StaffPanel = () => {
                     </button>
 
                     <button
-                        onClick={() => setView('scan')}
+                        onClick={() => setView('queue')}
                         className="card p-8 hover:border-primary transition-all text-left"
                     >
                         <div className="bg-primary/10 text-primary p-4 rounded-lg w-fit mb-6">
-                            <ScanLine size={28} />
+                            <ListChecks size={28} />
                         </div>
-                        <h3 className="font-display text-xl font-bold text-ink mb-2">Scan Visitor QR</h3>
+                        <h3 className="font-display text-xl font-bold text-ink mb-2">Pending Queue</h3>
                         <p className="text-ink/50 text-sm leading-relaxed">
-                            Scan a checked-in visitor&apos;s personal QR to see their pending drop-offs and pickups.
+                            Everyone waiting on a drop-off or pickup, live - no scanning needed on your end.
                         </p>
                     </button>
                 </div>
@@ -296,7 +263,7 @@ const StaffPanel = () => {
                         <QRCodeSVG value={ROOM_110_QR_VALUE} size={220} level="H" />
                     </div>
                     <p className="text-sm text-ink/50 max-w-xs mx-auto">
-                        This code never changes - visitors scan it with their own phone to pull up their personal QR, which staff then scans to process them.
+                        This code never changes - visitors scan it with their own phone to check in. Staff don&apos;t scan anything - just work the Pending Queue as people show up.
                     </p>
                 </div>
             </div>
@@ -456,7 +423,7 @@ const StaffPanel = () => {
         );
     }
 
-    // view === 'scan'
+    // view === 'queue'
     return (
         <div className="max-w-2xl mx-auto py-8">
             <button onClick={reset} className="flex items-center gap-2 text-ink/40 font-semibold text-sm mb-6 hover:text-ink transition-colors">
@@ -464,60 +431,48 @@ const StaffPanel = () => {
             </button>
 
             <div className="card p-8 border-t-4 border-t-primary">
-                <div className="flex items-center gap-4 mb-8 pb-8 divider-dashed">
-                    <div className="p-3 rounded-lg bg-primary/10 text-primary">
-                        <ScanLine size={20} />
+                <div className="flex items-center justify-between gap-4 mb-8 pb-8 divider-dashed">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-lg bg-primary/10 text-primary">
+                            <ListChecks size={20} />
+                        </div>
+                        <div>
+                            <h3 className="font-display text-xl font-bold text-ink">Pending Queue</h3>
+                            <p className="eyebrow mt-0.5">No scanning needed</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="font-display text-xl font-bold text-ink">Visitor Lookup</h3>
-                        <p className="eyebrow mt-0.5">{visitorData ? visitorData.visitor.name : 'Scanning personal QR'}</p>
-                    </div>
+                    <button onClick={loadQueue} disabled={queueLoading} className="p-2 text-ink/40 hover:text-primary transition-colors disabled:opacity-50">
+                        {queueLoading ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+                    </button>
                 </div>
 
-                {!visitorData ? (
-                    <div className="space-y-4">
-                        {looking ? (
-                            <div className="py-16 text-center">
-                                <Loader2 className="animate-spin mx-auto text-primary mb-3" size={28} />
-                                <p className="eyebrow">Looking up visitor...</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div id="reader" className="overflow-hidden rounded-lg border border-dashed border-line bg-paper"></div>
-                                <p className="text-center eyebrow">Awaiting valid QR scan</p>
-                            </>
-                        )}
-                        {scanError && (
-                            <div className="bg-red-50 p-4 rounded-lg border border-red-100 flex items-start gap-3">
-                                <AlertCircle className="text-red-500 shrink-0" size={16} />
-                                <p className="text-sm text-red-600 font-medium">{scanError}</p>
-                            </div>
-                        )}
+                {queueLoading && !queueData ? (
+                    <div className="py-16 text-center">
+                        <Loader2 className="animate-spin mx-auto text-primary mb-3" size={28} />
+                        <p className="eyebrow">Loading queue...</p>
+                    </div>
+                ) : queueError ? (
+                    <div className="bg-red-50 p-4 rounded-lg border border-red-100 flex items-start gap-3">
+                        <AlertCircle className="text-red-500 shrink-0" size={16} />
+                        <p className="text-sm text-red-600 font-medium">{queueError}</p>
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        <div className="bg-primary/5 p-5 rounded-lg border border-primary/20 flex items-center gap-4">
-                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
-                                {visitorData.visitor.name[0]}
-                            </div>
-                            <div>
-                                <p className="eyebrow text-primary mb-0.5">Identified visitor</p>
-                                <h5 className="font-display font-bold text-ink">{visitorData.visitor.name}</h5>
-                                <p className="font-mono text-xs text-ink/40">{visitorData.visitor.uiu_id}</p>
-                            </div>
-                        </div>
-
-                        {visitorData.dropoffs.length > 0 && (
+                        {queueData?.dropoffs.length > 0 && (
                             <div className="space-y-3">
-                                <p className="eyebrow">Drop-offs pending intake</p>
-                                {visitorData.dropoffs.map(item => (
+                                <p className="eyebrow">Drop-offs pending intake ({queueData.dropoffs.length})</p>
+                                {queueData.dropoffs.map(item => (
                                     <div key={item.id} className="card p-5">
                                         <div className="flex items-center gap-4 mb-4">
                                             <ItemThumb item={item} />
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="ref-tag mb-1">Serial No. #{item.serial}</p>
                                                 <h6 className="font-display font-bold text-ink">{item.title}</h6>
-                                                <p className="text-[10px] font-semibold text-primary">{item.state}</p>
+                                                {item.person && (
+                                                    <p className="text-xs text-ink/50 flex items-center gap-1 mt-0.5">
+                                                        <User size={11} /> {item.person.name} &middot; {item.person.uiu_id}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <button
@@ -533,22 +488,26 @@ const StaffPanel = () => {
                             </div>
                         )}
 
-                        {visitorData.pickups.length > 0 && (
+                        {queueData?.pickups.length > 0 && (
                             <div className="space-y-3">
-                                <p className="eyebrow">Pickups ready for release</p>
-                                {visitorData.pickups.map(item => (
+                                <p className="eyebrow">Pickups ready for release ({queueData.pickups.length})</p>
+                                {queueData.pickups.map(item => (
                                     <div key={item.id} className="card p-5">
                                         <div className="flex items-center gap-4 mb-4">
                                             <ItemThumb item={item} />
-                                            <div>
+                                            <div className="flex-1">
                                                 <p className="ref-tag mb-1">Serial No. #{item.serial}</p>
                                                 <h6 className="font-display font-bold text-ink">{item.title}</h6>
-                                                <p className="text-[10px] font-semibold text-accent">AUTHORIZED</p>
+                                                {item.person && (
+                                                    <p className="text-xs text-ink/50 flex items-center gap-1 mt-0.5">
+                                                        <User size={11} /> {item.person.name} &middot; {item.person.uiu_id}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <button
-                                            disabled={processingId === item.id}
-                                            onClick={() => confirmPickup(item.id)}
+                                            disabled={processingId === item.id || !item.person}
+                                            onClick={() => confirmPickup(item)}
                                             className="btn-accent w-full py-3 text-sm disabled:opacity-50"
                                         >
                                             {processingId === item.id ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
@@ -559,10 +518,10 @@ const StaffPanel = () => {
                             </div>
                         )}
 
-                        {visitorData.dropoffs.length === 0 && visitorData.pickups.length === 0 && (
+                        {queueData && queueData.dropoffs.length === 0 && queueData.pickups.length === 0 && (
                             <div className="card border-dashed p-8 text-center">
                                 <AlertCircle className="mx-auto text-ink/20 mb-3" size={28} />
-                                <p className="text-sm text-ink/40">Nothing pending for this visitor at Room 110.</p>
+                                <p className="text-sm text-ink/40">Nothing pending at Room 110 right now.</p>
                             </div>
                         )}
 
@@ -572,13 +531,6 @@ const StaffPanel = () => {
                                 <p className="text-sm text-red-600 font-medium">{actionError}</p>
                             </div>
                         )}
-
-                        <button
-                            onClick={scanNextVisitor}
-                            className="w-full py-3 px-5 text-sm font-semibold text-ink border border-line rounded-lg hover:border-ink/30 transition-all"
-                        >
-                            Scan next visitor
-                        </button>
                     </div>
                 )}
             </div>
