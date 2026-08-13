@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    BarChart3, Users, Archive, AlertTriangle, ShieldCheck,
+    BarChart3, Users, Archive, AlertTriangle,
     Edit3, Trash2, X, CheckCircle2,
     Database, Layers, Eye, UserCheck, Tags,
     Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag
@@ -9,6 +9,7 @@ import {
     XAxis, YAxis, Tooltip, CartesianGrid,
     ResponsiveContainer, BarChart, Bar, AreaChart, Area, Legend
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL, authFetch } from '../api_config';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,7 +19,7 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [items, setItems] = useState([]);
     const [fastIdItems, setFastIdItems] = useState([]);
-    const [loginLogs, setLoginLogs] = useState([]);
+    const [auditLogs, setAuditLogs] = useState([]);
     const [tickets, setTickets] = useState([]);
     const [claims, setClaims] = useState([]);
     const [claimReviews, setClaimReviews] = useState({});
@@ -37,7 +38,7 @@ const AdminDashboard = () => {
                 authFetch(`/api/admin-stats/summary-stats`),
                 authFetch(`/api/admin/items`),
                 fetch(`${API_BASE_URL}/api/fast-id/all-items`),
-                authFetch(`/api/admin-stats/login-logs`),
+                authFetch(`/api/admin-stats/audit-logs?limit=200`),
                 fetch(`${API_BASE_URL}/api/tickets/`),
                 authFetch(`/api/admin/claims`),
                 authFetch(`/api/claims/reviews`)
@@ -46,7 +47,7 @@ const AdminDashboard = () => {
             if (statsRes.ok) setStats(await statsRes.json());
             if (itemsRes.ok) setItems(await itemsRes.json());
             if (fidRes.ok) setFastIdItems(await fidRes.json());
-            if (logsRes.ok) setLoginLogs(await logsRes.json());
+            if (logsRes.ok) setAuditLogs(await logsRes.json());
             if (ticketsRes.ok) setTickets(await ticketsRes.json());
             if (claimsRes.ok) setClaims(await claimsRes.json());
             if (reviewsRes.ok) setClaimReviews(await reviewsRes.json());
@@ -130,7 +131,7 @@ const AdminDashboard = () => {
             {/* Main Content Area */}
             <main className="animate-in slide-in-from-bottom-12 duration-700">
                 {activeTab === 'analytics' && <AnalyticsPanel stats={stats} />}
-                {activeTab === 'logs' && <LogsPanel logs={loginLogs} />}
+                {activeTab === 'logs' && <LogsPanel logs={auditLogs} />}
                 {activeTab === 'items' && <ItemsCrudPanel items={items} refresh={fetchAllData} userId={user?.id} />}
                 {activeTab === 'inventory_110' && <Room110Panel items={items} />}
                 {activeTab === 'fast_id' && <FastIdCrudPanel items={fastIdItems} refresh={fetchAllData} />}
@@ -152,13 +153,14 @@ const SectionHeader = ({ eyebrow, title }) => (
 );
 
 const AnalyticsPanel = ({ stats }) => {
+    const navigate = useNavigate();
     if (!stats) return null;
 
     const cards = [
-        { label: "Active", sub: "browsable right now", value: stats.summary.ACTIVE || 0, color: "text-blue-600", bg: "bg-blue-50", icon: Database },
-        { label: "Pending pickup", sub: "waiting at Room 110", value: stats.summary.READY_FOR_PICKUP || 0, color: "text-primary", bg: "bg-primary/10", icon: Package },
-        { label: "Resolved", sub: "handed back, all time", value: stats.summary.RESOLVED || 0, color: "text-accent", bg: "bg-accent/10", icon: CheckCircle2 },
-        { label: "Overdue", sub: "past the 72h drop-off window", value: stats.summary.OVERDUE_SUBMISSION || 0, color: "text-red-600", bg: "bg-red-50", icon: AlertTriangle },
+        { label: "Active", sub: "browsable right now", value: stats.summary.ACTIVE || 0, color: "text-blue-600", bg: "bg-blue-50", icon: Database, state: 'ACTIVE' },
+        { label: "Pending pickup", sub: "waiting at Room 110", value: stats.summary.READY_FOR_PICKUP || 0, color: "text-primary", bg: "bg-primary/10", icon: Package, state: 'READY_FOR_PICKUP' },
+        { label: "Resolved", sub: "handed back, all time", value: stats.summary.RESOLVED || 0, color: "text-accent", bg: "bg-accent/10", icon: CheckCircle2, state: 'RESOLVED' },
+        { label: "Overdue", sub: "past the 72h drop-off window", value: stats.summary.OVERDUE_SUBMISSION || 0, color: "text-red-600", bg: "bg-red-50", icon: AlertTriangle, state: 'OVERDUE_SUBMISSION' },
     ];
 
     const claimTotal = stats.claim_stats?.total || 0;
@@ -175,14 +177,18 @@ const AnalyticsPanel = ({ stats }) => {
                 <SectionHeader eyebrow="Live" title="Right now" />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {cards.map((card, i) => (
-                        <div key={i} className="card p-6">
+                        <button
+                            key={i}
+                            onClick={() => navigate(`/browse?state=${card.state}`)}
+                            className="card p-6 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+                        >
                             <div className={`${card.bg} ${card.color} w-11 h-11 rounded-lg flex items-center justify-center mb-4`}>
                                 <card.icon size={20} />
                             </div>
                             <h4 className="font-display text-3xl font-bold text-ink leading-none mb-1.5">{card.value}</h4>
                             <p className="text-sm font-semibold text-ink/70">{card.label}</p>
                             <p className="text-xs text-ink/40 mt-0.5">{card.sub}</p>
-                        </div>
+                        </button>
                     ))}
                 </div>
             </div>
@@ -224,15 +230,15 @@ const AnalyticsPanel = ({ stats }) => {
                         {(stats.category_counts || []).map((cat, i) => {
                             const max = Math.max(...(stats.category_counts || []).map(c => c.count), 1);
                             return (
-                                <div key={i}>
-                                    <div className="flex justify-between text-xs font-medium text-ink/60 mb-1.5">
+                                <button key={i} onClick={() => navigate(`/browse?category_id=${cat.id}`)} className="w-full text-left group/row">
+                                    <div className="flex justify-between text-xs font-medium text-ink/60 mb-1.5 group-hover/row:text-ink transition-colors">
                                         <span className="flex items-center gap-1.5"><Tags size={11} /> {cat.name}</span>
                                         <span className="font-mono text-ink">{cat.count}</span>
                                     </div>
                                     <div className="w-full bg-paper h-2 rounded-full overflow-hidden">
                                         <div className="bg-accent h-full rounded-full" style={{ width: `${(cat.count / max) * 100}%` }}></div>
                                     </div>
-                                </div>
+                                </button>
                             );
                         })}
                     </div>
@@ -244,8 +250,8 @@ const AnalyticsPanel = ({ stats }) => {
                     <div className="space-y-5 max-h-[260px] overflow-y-auto pr-2">
                         {(stats.location_counts || []).length === 0 && <p className="text-sm text-white/30">No items yet</p>}
                         {(stats.location_counts || []).map((loc, i) => (
-                            <div key={i}>
-                                <div className="flex justify-between text-xs text-white/50 mb-2">
+                            <button key={i} onClick={() => navigate(`/browse?location_id=${loc.id}`)} className="w-full text-left group/row">
+                                <div className="flex justify-between text-xs text-white/50 mb-2 group-hover/row:text-white transition-colors">
                                     <span>{loc.name}</span>
                                     <span className="text-white font-mono">{loc.count}</span>
                                 </div>
@@ -255,7 +261,7 @@ const AnalyticsPanel = ({ stats }) => {
                                         style={{ width: `${Math.min((loc.count / (stats.summary.ACTIVE || 1)) * 100, 100)}%` }}
                                     ></div>
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -413,74 +419,72 @@ const Room110Panel = ({ items }) => {
     );
 };
 
+const LOG_CATEGORIES = ['ALL', 'AUTH', 'ITEM', 'HANDOVER', 'CLAIM', 'TICKET', 'OTHER'];
+
+const LOG_LEVEL_STYLES = {
+    INFO: 'bg-ink/[0.06] text-ink/50',
+    WARN: 'bg-amber-100 text-amber-700',
+    ERROR: 'bg-red-100 text-red-700',
+};
+
+const LOG_CATEGORY_STYLES = {
+    AUTH: 'text-indigo-600',
+    ITEM: 'text-primary',
+    HANDOVER: 'text-accent',
+    CLAIM: 'text-purple-600',
+    TICKET: 'text-teal-600',
+    OTHER: 'text-ink/40',
+};
+
 const LogsPanel = ({ logs }) => {
+    const [category, setCategory] = useState('ALL');
+    const [search, setSearch] = useState('');
+
+    const filtered = logs.filter(l => {
+        if (category !== 'ALL' && l.category !== category) return false;
+        if (search && !`${l.action_type} ${l.details} ${l.actor_name}`.toLowerCase().includes(search.toLowerCase())) return false;
+        return true;
+    });
+
     return (
         <div className="bg-white rounded-xl border border-line shadow-2xl overflow-hidden animate-in fade-in duration-500">
-            <div className="p-10 border-b border-line flex justify-between items-center bg-paper/50">
+            <div className="p-8 border-b border-line flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-paper/50">
                 <div>
-                    <h3 className="text-3xl font-black text-ink">Login Monitor</h3>
-                    <p className="text-[10px] font-bold text-ink/40 mt-1">Real-time session authorization tracking</p>
+                    <h3 className="text-2xl font-black text-ink">System Log Monitor</h3>
+                    <p className="text-[10px] font-bold text-ink/40 mt-1">{filtered.length} of {logs.length} events &middot; auth, item lifecycle, handovers, claims, tickets</p>
                 </div>
-                <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-2xl border border-line shadow-sm">
-                    <Clock size={16} className="text-primary" />
-                    <span className="text-xs font-semibold text-ink">Live Node Active</span>
+                <div className="flex gap-2 items-center">
+                    <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search logs..."
+                        className="bg-white border border-line rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-ink/30 w-48"
+                    />
+                    <select
+                        value={category}
+                        onChange={e => setCategory(e.target.value)}
+                        className="bg-white border border-line rounded-lg px-3 py-2 text-xs font-semibold outline-none cursor-pointer"
+                    >
+                        {LOG_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                 </div>
             </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-white border-b-2 border-line">
-                            <th className="px-6 py-6 font-semibold text-[10px] text-ink/40">User ID</th>
-                            <th className="px-6 py-6 font-semibold text-[10px] text-ink/40">UIU ID</th>
-                            <th className="px-6 py-6 font-semibold text-[10px] text-ink/40">Login Time</th>
-                            <th className="px-6 py-6 font-semibold text-[10px] text-ink/40">User</th>
-                            <th className="px-6 py-6 font-semibold text-[10px] text-ink/40">Details</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {logs.map(log => (
-                            <tr key={log.id} className="hover:bg-paper/50 transition-colors group">
-                                <td className="px-6 py-6">
-                                    <span className="bg-ink/[0.04] px-3 py-1.5 rounded-lg text-xs font-black text-ink/60">#{log.user_id || 'N/A'}</span>
-                                </td>
-                                <td className="px-6 py-6">
-                                    <span className="font-bold text-ink text-sm">{log.uiu_id || 'Unknown'}</span>
-                                </td>
-                                <td className="px-6 py-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-ink/[0.04] rounded-lg text-ink/40"><Clock size={16} /></div>
-                                        <div>
-                                            <div className="font-bold text-ink text-sm">{new Date(log.timestamp).toLocaleTimeString()}</div>
-                                            <div className="text-[10px] text-ink/40 font-bold uppercase">{new Date(log.timestamp).toLocaleDateString()}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm
-                                            ${log.role === 'ADMIN' ? 'bg-indigo-600 text-white shadow-indigo-500/20' :
-                                                log.role === 'STAFF' ? 'bg-primary text-white shadow-primary/20' :
-                                                    'bg-teal-500 text-white shadow-accent/20'}
-                                        `}>
-                                            {log.role?.[0]}
-                                        </div>
-                                        <div>
-                                            <div className="font-black text-ink">{log.user_name}</div>
-                                            <div className="text-[10px] font-bold text-ink/40">{log.role}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-6">
-                                    <div className="flex items-center gap-2 text-xs font-bold text-ink/50 bg-paper px-4 py-3 rounded-2xl border border-line max-w-xs truncate">
-                                        <ShieldCheck size={14} className="text-green-500 shrink-0" />
-                                        <span className="truncate">{log.details}</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {logs.length === 0 && <div className="p-32 text-center text-ink/25 font-semibold tracking-[0.5em] opacity-40">No session logs detected</div>}
+
+            <div className="font-mono text-xs divide-y divide-gray-50 max-h-[70vh] overflow-y-auto">
+                {filtered.map(log => (
+                    <div key={log.id} className="px-6 py-3 flex items-start gap-3 hover:bg-paper/50 transition-colors">
+                        <span className="text-ink/30 shrink-0 pt-0.5">{new Date(log.timestamp).toISOString().replace('T', ' ').slice(0, 19)}</span>
+                        <span className={`shrink-0 px-1.5 py-0.5 rounded font-bold ${LOG_LEVEL_STYLES[log.level] || LOG_LEVEL_STYLES.INFO}`}>{log.level}</span>
+                        <span className={`shrink-0 font-bold ${LOG_CATEGORY_STYLES[log.category] || LOG_CATEGORY_STYLES.OTHER}`}>[{log.category}]</span>
+                        <span className="shrink-0 font-bold text-ink">{log.action_type}</span>
+                        <span className="text-ink/40 shrink-0">actor={log.actor_uiu_id || log.actor_name}{log.actor_role ? `(${log.actor_role})` : ''}</span>
+                        {log.entity_id != null && <span className="text-ink/40 shrink-0">entity_id={log.entity_id}</span>}
+                        <span className="text-ink/60 truncate">{log.details}</span>
+                    </div>
+                ))}
+                {filtered.length === 0 && (
+                    <div className="p-20 text-center text-ink/25 font-sans font-semibold tracking-[0.3em] opacity-40">No matching log events</div>
+                )}
             </div>
         </div>
     );
@@ -510,7 +514,7 @@ const ItemsCrudPanel = ({ items, refresh }) => {
             <div className="p-10 border-b border-line flex justify-between items-center bg-ink text-white">
                 <div>
                     <h3 className="text-3xl font-display font-bold">Global Asset Registry</h3>
-                    <p className="text-[10px] font-bold text-orange-400 mt-1">Central CRUD Oversight</p>
+                    <p className="text-[10px] font-bold text-orange-400 mt-1">Record editing - titles &amp; descriptions. For lifecycle state, use Flow CRUD.</p>
                 </div>
             </div>
             <div className="overflow-x-auto">
@@ -527,27 +531,42 @@ const ItemsCrudPanel = ({ items, refresh }) => {
                             <tr key={item.id} className="hover:bg-paper transition-colors">
                                 <td className="px-10 py-8">
                                     {editing === item.id ? (
-                                        <div className="space-y-3">
-                                            <input
-                                                className="w-full bg-white border-2 border-primary rounded-xl px-4 py-3 font-bold text-sm outline-none shadow-sm focus:shadow-orange-500/10"
-                                                value={form.title}
-                                                onChange={e => setForm({ ...form, title: e.target.value })}
-                                                placeholder="Title"
-                                            />
-                                            <select
-                                                className="w-full bg-white border-2 border-primary rounded-xl px-4 py-3 font-bold text-sm outline-none shadow-sm"
-                                                value={form.state}
-                                                onChange={e => setForm({ ...form, state: e.target.value })}
-                                            >
-                                                {['ACTIVE', 'PENDING_HANDOVER', 'READY_FOR_PICKUP', 'RESOLVED', 'ARCHIVED'].map(s => (
-                                                    <option key={s} value={s}>{s}</option>
-                                                ))}
-                                            </select>
+                                        <div className="space-y-3 max-w-md">
+                                            <div>
+                                                <label className="text-[9px] font-black text-ink/30 uppercase">Title</label>
+                                                <input
+                                                    className="w-full bg-white border-2 border-primary rounded-xl px-4 py-2.5 font-bold text-sm outline-none shadow-sm focus:shadow-orange-500/10"
+                                                    value={form.title}
+                                                    onChange={e => setForm({ ...form, title: e.target.value })}
+                                                    placeholder="Title"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] font-black text-ink/30 uppercase">Public description</label>
+                                                <textarea
+                                                    className="w-full bg-white border-2 border-primary rounded-xl px-4 py-2.5 font-medium text-sm outline-none shadow-sm resize-none"
+                                                    rows={2}
+                                                    value={form.public_description}
+                                                    onChange={e => setForm({ ...form, public_description: e.target.value })}
+                                                    placeholder="Public description"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] font-black text-ink/30 uppercase">Private description (claim-quiz secret)</label>
+                                                <textarea
+                                                    className="w-full bg-white border-2 border-primary rounded-xl px-4 py-2.5 font-medium text-sm outline-none shadow-sm resize-none"
+                                                    rows={2}
+                                                    value={form.private_description}
+                                                    onChange={e => setForm({ ...form, private_description: e.target.value })}
+                                                    placeholder="Private description"
+                                                />
+                                            </div>
                                         </div>
                                     ) : (
                                         <>
                                             <div className="font-black text-ink text-lg">{item.title}</div>
                                             <div className="text-[10px] text-ink/40 font-bold uppercase mt-1">REF_ID: #{item.id}</div>
+                                            <div className="text-xs text-ink/50 mt-2 max-w-md line-clamp-1">{item.public_description}</div>
                                         </>
                                     )}
                                 </td>
@@ -573,8 +592,8 @@ const ItemsCrudPanel = ({ items, refresh }) => {
                                             </>
                                         ) : (
                                             <>
-                                                <button onClick={() => { setEditing(item.id); setForm({ title: item.title, state: item.state }); }} className="p-3 bg-ink/[0.04] text-ink/40 rounded-2xl hover:bg-primary hover:text-white transition-all hover:scale-110"><Edit3 size={18} /></button>
-                                                <button onClick={() => handleDelete(item.id)} className="p-3 bg-ink/[0.04] text-ink/40 rounded-2xl hover:bg-red-500 hover:text-white transition-all hover:scale-110"><Trash2 size={18} /></button>
+                                                <button title="Edit record" onClick={() => { setEditing(item.id); setForm({ title: item.title, public_description: item.public_description, private_description: item.private_description }); }} className="p-3 bg-ink/[0.04] text-ink/40 rounded-2xl hover:bg-primary hover:text-white transition-all hover:scale-110"><Edit3 size={18} /></button>
+                                                <button title="Delete" onClick={() => handleDelete(item.id)} className="p-3 bg-ink/[0.04] text-ink/40 rounded-2xl hover:bg-red-500 hover:text-white transition-all hover:scale-110"><Trash2 size={18} /></button>
                                             </>
                                         )}
                                     </div>
@@ -734,7 +753,7 @@ const FlowOverridePanel = ({ items, refresh }) => {
             <div className="p-10 border-b border-line flex justify-between items-center bg-red-600 text-white">
                 <div>
                     <h3 className="text-3xl font-display font-bold">Lifecycle Network Overrides</h3>
-                    <p className="text-[10px] font-bold text-red-200 mt-1">Direct State Injection System</p>
+                    <p className="text-[10px] font-bold text-red-200 mt-1">State transitions only - skips the normal handover flow. For titles/descriptions, use Items CRUD.</p>
                 </div>
                 <div className="px-6 py-2 bg-white/20 rounded-full text-[10px] font-semibold border border-white/20">Danger Zone Access</div>
             </div>

@@ -3,7 +3,7 @@ import {
     Search, Filter, MapPin, ArrowRight, UserCheck, X, Mail, Phone,
     ShieldCheck, Clock, Archive, Edit3, Trash2, CheckCircle2, Package
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL, authFetch } from '../api_config';
 
@@ -49,6 +49,7 @@ const ITEM_STATE_OPTIONS = ['ACTIVE', 'PENDING_HANDOVER', 'READY_FOR_PICKUP', 'R
 
 const BrowseItems = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user } = useAuth();
     const isStaffOrAdmin = user?.role === 'STAFF' || user?.role === 'ADMIN';
     const isAdmin = user?.role === 'ADMIN';
@@ -56,7 +57,14 @@ const BrowseItems = () => {
     const [items, setItems] = useState([]);
     const [categories, setCategories] = useState([]);
     const [locations, setLocations] = useState([]);
-    const [filters, setFilters] = useState({ category_id: '', location_id: '', search: '', state: '' });
+    // Pre-filled from the URL so links from elsewhere (e.g. admin dashboard
+    // stat tiles) land here already filtered, not just on the unfiltered feed.
+    const [filters, setFilters] = useState({
+        category_id: searchParams.get('category_id') || '',
+        location_id: searchParams.get('location_id') || '',
+        search: '',
+        state: searchParams.get('state') || '',
+    });
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null); // { type, id } of open detail modal
 

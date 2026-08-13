@@ -9,8 +9,65 @@ from datetime import datetime, timedelta
 
 RESOLUTION_ACTIONS = ["HANDOVER_DIRECT", "ROOM_110_PICKUP"]
 
+# Groups the free-form action_type strings scattered across the routers
+# into a handful of categories, purely for the log monitoring UI (filter
+# dropdown + color coding) - doesn't affect anything else action_type touches.
+ACTION_CATEGORIES = {
+    "LOGIN": "AUTH", "REGISTER": "AUTH",
+    "REPORT_ITEM": "ITEM", "STATE_CHANGE": "ITEM", "ARCHIVE_ITEM": "ITEM",
+    "ADMIN_UPDATE_ITEM": "ITEM", "ADMIN_DELETE_ITEM": "ITEM",
+    "REPORT_LOST_ITEM": "ITEM", "LOST_ITEM_STATUS_CHANGE": "ITEM",
+    "HANDOVER_DIRECT": "HANDOVER", "ROOM_110_DROPOFF": "HANDOVER",
+    "ROOM_110_PICKUP": "HANDOVER", "ROOM_110_INTAKE_QR": "HANDOVER",
+    "ADMIN_UPDATE_CLAIM": "CLAIM",
+    "TICKET_CREATED": "TICKET", "TICKET_RESPONDED": "TICKET",
+}
+# Rough severity so the UI can flag anything destructive/overriding without
+# a human having to read every "details" string.
+ACTION_LEVEL = {
+    "ADMIN_DELETE_ITEM": "WARN",
+    "ADMIN_UPDATE_ITEM": "WARN",
+    "ADMIN_UPDATE_CLAIM": "WARN",
+}
+
 router = APIRouter()
 admin_only = require_role(UserRole.ADMIN)
+
+@router.get("/audit-logs", response_model=List[Any])
+def get_audit_logs(
+    limit: int = 100,
+    category: str = None,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(admin_only),
+):
+    """Full system activity log for the admin Log Monitoring view - every
+    AuditLog row (item lifecycle, claims, handovers, tickets, auth), not
+    just logins. See ACTION_CATEGORIES for how action_type groups into the
+    filterable categories the UI shows."""
+    query = select(AuditLog).order_by(AuditLog.timestamp.desc()).limit(limit)
+    logs = session.exec(query).all()
+
+    result = []
+    for log in logs:
+        log_category = ACTION_CATEGORIES.get(log.action_type, "OTHER")
+        if category and category != log_category:
+            continue
+        actor = session.get(User, log.actor_id)
+        result.append({
+            "id": log.id,
+            "timestamp": log.timestamp.isoformat(),
+            "action_type": log.action_type,
+            "category": log_category,
+            "level": ACTION_LEVEL.get(log.action_type, "INFO"),
+            "entity_id": log.entity_id,
+            "details": log.details,
+            "actor_id": actor.id if actor else log.actor_id,
+            "actor_name": actor.name if actor else "System",
+            "actor_uiu_id": actor.uiu_id if actor else None,
+            "actor_role": actor.role if actor else None,
+        })
+    return result
+
 
 @router.get("/login-logs", response_model=List[Any])
 def get_login_logs(limit: int = 50, session: Session = Depends(get_session), current_user: User = Depends(admin_only)):
@@ -75,16 +132,17 @@ def get_summary_stats(session: Session = Depends(get_session), current_user: Use
     for loc in locations:
         count = session.exec(select(func.count(Item.id)).where(Item.location_id == loc.id)).one()
         if count > 0:
-            location_counts.append({"name": loc.name, "count": count})
-    
+            location_counts.append({"id": loc.id, "name": loc.name, "count": count})
+
     # Category Distribution
     categories = session.exec(select(Category)).all()
     category_counts = []
     for cat in categories:
         count = session.exec(select(func.count(Item.id)).where(Item.category_id == cat.id)).one()
         if count > 0:
-            category_counts.append({"name": cat.name, "count": count})
-            
+            category_counts.append({"id": cat.id, "name": cat.name, "count": count})
+
+
     # Claim Metrics
     total_claims = session.exec(select(func.count(Claim.id))).one()
     approved_claims = session.exec(select(func.count(Claim.id)).where(Claim.status == "APPROVED")).one()
