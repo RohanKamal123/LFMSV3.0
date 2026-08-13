@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL, authFetch } from '../api_config';
+import { API_BASE_URL, authFetch, ROOM_110_QR_VALUE } from '../api_config';
 import { Link, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import HandoverScanner from '../components/HandoverScanner';
@@ -22,7 +22,8 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isStaffScannerOpen, setIsStaffScannerOpen] = useState(false);
-    const [joining, setJoining] = useState(false);
+    const [checkedIn, setCheckedIn] = useState(false);
+    const [checkinError, setCheckinError] = useState(null);
     const [qrToken, setQrToken] = useState(null);
 
     // The handover identity QR embeds a short-lived signed token (not the
@@ -57,19 +58,25 @@ const Dashboard = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
-    // Staff QR Scanner logic
+    // Room 110 check-in scanner - expects the one fixed QR staff always
+    // display, not a per-visit token. Scanning it just switches this modal
+    // into "checked in" mode, which shows the student's own identity QR for
+    // staff to scan next - the actual state transition only happens once
+    // staff confirms via /api/handover/lookup + staff-scan-tag/claimer.
     useEffect(() => {
-        if (isStaffScannerOpen && !joining) {
+        if (isStaffScannerOpen && !checkedIn) {
             const scanner = new Html5QrcodeScanner("staff-reader", {
                 fps: 10,
                 qrbox: { width: 250, height: 250 }
             });
 
             scanner.render(async (decodedText) => {
-                if (decodedText.startsWith("FINDX_SESSION|")) {
-                    const token = decodedText.split("|")[1];
+                if (decodedText === ROOM_110_QR_VALUE) {
                     scanner.clear();
-                    joinStaffSession(token);
+                    setCheckinError(null);
+                    setCheckedIn(true);
+                } else {
+                    setCheckinError("That's not the Room 110 check-in QR. Ask staff to show the correct code.");
                 }
             }, (_err) => { });
 
@@ -77,27 +84,7 @@ const Dashboard = () => {
                 scanner.clear().catch(err => console.error("Scanner clear fail", err));
             };
         }
-    }, [isStaffScannerOpen, joining]);
-
-    const joinStaffSession = async (token) => {
-        setJoining(true);
-        try {
-            const res = await authFetch(`/api/handover-session/join?session_token=${token}`, {
-                method: 'POST'
-            });
-            if (res.ok) {
-                alert("Connected to Room 110! Your approved items are now visible to the staff.");
-                setIsStaffScannerOpen(false);
-            } else {
-                const data = await res.json();
-                alert(data.detail || "Failed to join session");
-            }
-        } catch (err) {
-            alert("Network Error: Could not reach terminal");
-        } finally {
-            setJoining(false);
-        }
-    };
+    }, [isStaffScannerOpen, checkedIn]);
 
     const fetchData = async () => {
         try {
@@ -167,10 +154,25 @@ const Dashboard = () => {
     );
     const activeReportsNeedingDropoff = foundItems.filter(i => i.state === 'ACTIVE' || i.state === 'PENDING_HANDOVER' || i.state === 'OVERDUE_SUBMISSION');
     // Path A only makes sense once someone has actually claimed one of this
-    // user's found reports (there's a claimant to scan); Path B only once
+    // user's found reports (there's a finder to show a QR); Path B only once
     // this user has an approved claim of their own waiting at Room 110.
     const hasPendingHandoverAsFinder = foundItems.some(i => i.state === 'PENDING_HANDOVER');
     const showHandoverCard = hasPendingHandoverAsFinder || hasApprovedClaims;
+
+    // Path A is now claimant-initiated: the finder just shows their QR (no
+    // scanning on their side), the claimant scans it to receive directly -
+    // only possible while the item is still with the finder, not yet
+    // checked in to Room 110.
+    const pathAReceivableClaims = claims.filter(c =>
+        (c.status === 'APPROVED' || c.is_verified) && c.item?.state === 'PENDING_HANDOVER'
+    );
+    const hasReceivablePathA = pathAReceivableClaims.length > 0;
+
+    // What the Room 110 check-in screen shows the visitor once they've
+    // scanned the fixed staff QR - the same lists staff will see once they
+    // scan this visitor's own identity QR back.
+    const room110Dropoffs = foundItems.filter(i => i.state === 'PENDING_HANDOVER' || i.state === 'OVERDUE_SUBMISSION');
+    const room110Pickups = claims.filter(c => (c.status === 'APPROVED' || c.is_verified) && c.item?.state === 'READY_FOR_PICKUP');
 
     return (
         <div className="max-w-7xl mx-auto flex flex-col gap-8">
@@ -182,7 +184,7 @@ const Dashboard = () => {
                     <h2 className="font-display text-4xl font-bold text-ink">Student Hub</h2>
                 </div>
 
-                {hasApprovedClaims && (
+                {hasPendingHandoverAsFinder && (
                     <div className="card px-6 py-4 flex items-center gap-5">
                         <div className="relative p-1.5 bg-white border border-line rounded-lg">
                             {qrToken
@@ -191,9 +193,9 @@ const Dashboard = () => {
                             }
                         </div>
                         <div>
-                            <p className="eyebrow text-accent mb-1">Claimant ID</p>
+                            <p className="eyebrow text-accent mb-1">Finder ID</p>
                             <p className="font-mono text-2xl font-semibold text-ink leading-none">{user.uiu_id}</p>
-                            <p className="text-xs text-ink/40 font-medium mt-1">Show at Room 110 for pickup</p>
+                            <p className="text-xs text-ink/40 font-medium mt-1">Show this for the claimant to scan directly</p>
                         </div>
                     </div>
                 )}
@@ -297,21 +299,21 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        {hasPendingHandoverAsFinder && (
+                                        {hasReceivablePathA && (
                                             <button
                                                 onClick={() => setIsScannerOpen(true)}
                                                 className="btn-ink w-full py-3 text-sm justify-between"
                                             >
-                                                Hand over directly (Path A)
+                                                Receive directly (Path A)
                                                 <ArrowRight size={15} />
                                             </button>
                                         )}
-                                        {hasApprovedClaims && (
+                                        {(hasPendingHandoverAsFinder || hasApprovedClaims) && (
                                             <button
                                                 onClick={() => setIsStaffScannerOpen(true)}
                                                 className="w-full py-3 px-5 text-sm font-semibold text-ink border border-line rounded-lg hover:border-ink/30 transition-all flex items-center justify-between"
                                             >
-                                                Join staff pickup session (Path B)
+                                                Check in at Room 110 (Path B)
                                                 <QrCode size={15} />
                                             </button>
                                         )}
@@ -375,8 +377,8 @@ const Dashboard = () => {
                                                     <ShieldCheck size={15} className="text-accent mt-0.5 shrink-0" />
                                                     <p className="text-xs text-accent/90 font-medium leading-snug">
                                                         {claim.item?.state === 'READY_FOR_PICKUP'
-                                                            ? <>Verified &mdash; show your Hub QR at Room 110 for pickup.</>
-                                                            : <>Verified &mdash; waiting on the finder to hand this over, or drop-off at Room 110.</>}
+                                                            ? <>Verified &mdash; check in at Room 110 to pick it up.</>
+                                                            : <>Verified &mdash; scan the finder&apos;s QR to receive it directly, or check in at Room 110.</>}
                                                     </p>
                                                 </div>
                                             ) : (
@@ -413,14 +415,6 @@ const Dashboard = () => {
                                 <h2 className="font-display text-2xl font-bold text-ink">Reported Items</h2>
                                 <p className="eyebrow mt-1">{foundItems.length + fastIdReports.length} logs</p>
                             </div>
-                            {hasPendingHandoverAsFinder && (
-                                <button
-                                    onClick={() => setIsScannerOpen(true)}
-                                    className="btn-ink text-sm"
-                                >
-                                    <QrCode size={15} /> Handover scanner
-                                </button>
-                            )}
                         </div>
 
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -528,20 +522,66 @@ const Dashboard = () => {
             {isStaffScannerOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="card bg-white p-8 w-full max-w-xl relative">
-                        <button onClick={() => setIsStaffScannerOpen(false)} className="absolute top-6 right-6 p-2 hover:bg-ink/5 rounded-full transition-colors">
+                        <button
+                            onClick={() => { setIsStaffScannerOpen(false); setCheckedIn(false); setCheckinError(null); }}
+                            className="absolute top-6 right-6 p-2 hover:bg-ink/5 rounded-full transition-colors"
+                        >
                             <X size={20} className="text-ink/40" />
                         </button>
-                        <div className="mb-6">
-                            <p className="eyebrow mb-1">Room 110 terminal</p>
-                            <h3 className="font-display text-2xl font-bold text-ink">Pickup vault entry</h3>
-                        </div>
-                        <div id="staff-reader" className="overflow-hidden rounded-lg border border-line bg-paper mb-6 aspect-square"></div>
-                        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex items-center gap-3">
-                            <QrCode size={20} className="text-primary shrink-0" />
-                            <p className="text-xs text-ink/70 font-medium leading-tight">
-                                Aim your camera at the screen shown by the security officer to complete the handover.
-                            </p>
-                        </div>
+
+                        {!checkedIn ? (
+                            <>
+                                <div className="mb-6">
+                                    <p className="eyebrow mb-1">Room 110 terminal</p>
+                                    <h3 className="font-display text-2xl font-bold text-ink">Scan to check in</h3>
+                                </div>
+                                <div id="staff-reader" className="overflow-hidden rounded-lg border border-line bg-paper mb-6 aspect-square"></div>
+                                {checkinError && (
+                                    <div className="p-4 bg-red-50 rounded-lg border border-red-100 flex items-center gap-3 mb-4">
+                                        <AlertCircle size={18} className="text-red-500 shrink-0" />
+                                        <p className="text-xs text-red-600 font-medium leading-tight">{checkinError}</p>
+                                    </div>
+                                )}
+                                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex items-center gap-3">
+                                    <QrCode size={20} className="text-primary shrink-0" />
+                                    <p className="text-xs text-ink/70 font-medium leading-tight">
+                                        Aim your camera at the fixed Room 110 QR displayed at the counter to check in.
+                                    </p>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-center">
+                                <div className="mb-6">
+                                    <p className="eyebrow mb-1">Checked in</p>
+                                    <h3 className="font-display text-2xl font-bold text-ink">Show this to staff</h3>
+                                </div>
+                                <div className="bg-white p-5 rounded-lg border border-line inline-block mb-6">
+                                    {qrToken
+                                        ? <QRCodeSVG value={JSON.stringify({ token: qrToken })} size={200} level="H" />
+                                        : <div className="w-[200px] h-[200px] flex items-center justify-center text-ink/20"><QrCode size={32} /></div>
+                                    }
+                                </div>
+                                <p className="font-mono text-lg font-semibold text-ink mb-1">{user.uiu_id}</p>
+                                <p className="text-xs text-ink/40 font-medium mb-6">A staff member will scan this to look you up</p>
+
+                                {(room110Dropoffs.length > 0 || room110Pickups.length > 0) && (
+                                    <div className="text-left space-y-2 mb-2">
+                                        {room110Dropoffs.map(item => (
+                                            <div key={`dropoff-${item.id}`} className="flex items-center gap-2 text-sm text-ink/70 bg-paper rounded-lg px-4 py-2.5 border border-line">
+                                                <ArrowRight size={13} className="text-primary shrink-0" />
+                                                Drop off: <span className="font-semibold text-ink">{item.title}</span>
+                                            </div>
+                                        ))}
+                                        {room110Pickups.map(claim => (
+                                            <div key={`pickup-${claim.id}`} className="flex items-center gap-2 text-sm text-ink/70 bg-paper rounded-lg px-4 py-2.5 border border-line">
+                                                <ArrowRight size={13} className="text-accent shrink-0" />
+                                                Pick up: <span className="font-semibold text-ink">{claim.item?.title}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -549,8 +589,8 @@ const Dashboard = () => {
             <HandoverScanner
                 isOpen={isScannerOpen}
                 onClose={() => setIsScannerOpen(false)}
-                user={user}
-                items={[...foundItems, ...fastIdReports]}
+                direction="receive"
+                items={pathAReceivableClaims.map(c => c.item)}
                 onHandoverSuccess={fetchData}
             />
         </div>

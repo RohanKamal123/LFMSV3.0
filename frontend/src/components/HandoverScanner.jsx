@@ -15,7 +15,11 @@ const peekUiuIdFromToken = (token) => {
     }
 };
 
-const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
+// direction: 'give' - finder shows their QR, claimant scans it to receive.
+// direction: 'receive' - same modal from the claimant's side, calling the
+// reversed endpoint; `items` in this mode is the claimant's own approved
+// claims still waiting on the finder, not their found reports.
+const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items, direction = 'receive' }) => {
     const [scannedId, setScannedId] = useState(''); // manual-entry UIU ID
     const [scannedToken, setScannedToken] = useState(''); // signed token from a QR scan
     const [selectedItemId, setSelectedItemId] = useState('');
@@ -25,7 +29,11 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
     const [mode, setMode] = useState('camera'); // 'camera' or 'manual'
     const [scanConfirmed, setScanConfirmed] = useState(false);
 
-    // Real camera-based QR scan of the claimant's Hub QR (JSON: {token})
+    const copy = direction === 'give'
+        ? { label: '2. Scan claimant\'s Hub QR', hint: "That QR isn't a valid Find-X handover code. Ask the claimant to reopen their Hub.", endpoint: '/api/handover/founder-scan-claimer', tokenParam: 'claimant_token', idParam: 'claimant_uiu_id', manualLabel: 'Enter claimant UIU ID' }
+        : { label: '2. Scan finder\'s Hub QR', hint: "That QR isn't a valid Find-X handover code. Ask the finder to reopen their Hub.", endpoint: '/api/handover/claimant-scan-founder', tokenParam: 'finder_token', idParam: 'finder_uiu_id', manualLabel: 'Enter finder UIU ID' };
+
+    // Real camera-based QR scan of the other party's Hub QR (JSON: {token})
     useEffect(() => {
         if (isOpen && mode === 'camera' && !result && !scanConfirmed) {
             const scanner = new Html5QrcodeScanner("handover-reader", {
@@ -46,7 +54,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
                 } catch (_e) {
                     // Not JSON/no token - fall through, treated as an invalid scan below.
                 }
-                setError("That QR isn't a valid Find-X handover code. Ask the claimant to reopen their Hub.");
+                setError(copy.hint);
             }, (_warn) => {
                 // Silently ignore scan-frame misses
             });
@@ -55,13 +63,14 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
                 scanner.clear().catch(() => { });
             };
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, mode, result, scanConfirmed]);
 
     if (!isOpen) return null;
 
     const handleHandover = async () => {
         if ((!scannedToken && !scannedId) || !selectedItemId) {
-            setError("Please select an item and scan or enter the claimant's ID.");
+            setError("Please select an item and scan or enter the other party's ID.");
             return;
         }
 
@@ -71,10 +80,10 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
 
         try {
             const params = new URLSearchParams({ item_id: selectedItemId });
-            if (scannedToken) params.set('claimant_token', scannedToken);
-            else params.set('claimant_uiu_id', scannedId);
+            if (scannedToken) params.set(copy.tokenParam, scannedToken);
+            else params.set(copy.idParam, scannedId);
 
-            const res = await authFetch(`/api/handover/founder-scan-claimer?${params.toString()}`, {
+            const res = await authFetch(`${copy.endpoint}?${params.toString()}`, {
                 method: 'POST'
             });
             const data = await res.json();
@@ -119,7 +128,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
                         <div className="space-y-6">
                             {/* Step 1: Select Item */}
                             <div>
-                                <label className="eyebrow block mb-2">1. Select item to hand over</label>
+                                <label className="eyebrow block mb-2">1. Select item to {direction === 'give' ? 'hand over' : 'receive'}</label>
                                 <select
                                     className="input-field"
                                     value={selectedItemId}
@@ -137,7 +146,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
                             {/* Step 2: Real QR scan or manual entry */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="eyebrow">2. Scan claimant&apos;s Hub QR</label>
+                                    <label className="eyebrow">{copy.label}</label>
                                     <button
                                         type="button"
                                         onClick={() => { setMode(mode === 'camera' ? 'manual' : 'camera'); resetScan(); }}
@@ -167,7 +176,7 @@ const HandoverScanner = ({ isOpen, onClose, onHandoverSuccess, items }) => {
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={16} />
                                         <input
                                             type="text"
-                                            placeholder="Enter UIU ID"
+                                            placeholder={copy.manualLabel}
                                             className="input-field pl-11 font-mono"
                                             value={scannedId}
                                             onChange={(e) => setScannedId(e.target.value)}
