@@ -27,6 +27,7 @@ if not _secret:
 JWT_SECRET = _secret
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -96,6 +97,22 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists.")
     return user
+
+
+def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+    session: Session = Depends(get_session),
+) -> Optional[User]:
+    """Same as get_current_user, but returns None instead of raising when no
+    (or an invalid) token is present - for endpoints that stay public but
+    adjust what they reveal based on the caller's role when logged in."""
+    if not credentials:
+        return None
+    try:
+        payload = decode_token(credentials.credentials)
+    except HTTPException:
+        return None
+    return session.get(User, int(payload["sub"]))
 
 
 def require_role(*allowed_roles: UserRole):

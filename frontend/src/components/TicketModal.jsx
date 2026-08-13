@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { LifeBuoy, X, AlertTriangle, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { API_BASE_URL } from '../api_config';
 
@@ -81,10 +82,10 @@ const TicketModal = ({ isOpen, onClose, user }) => {
         onClose();
     };
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="card bg-white w-full max-w-lg overflow-hidden">
-                <div className="p-6 border-b border-line flex justify-between items-center bg-ink text-white">
+            <div className="card bg-white w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+                <div className="p-6 border-b border-line flex justify-between items-center bg-ink text-white shrink-0">
                     <div className="flex items-center gap-3">
                         <LifeBuoy size={20} className="text-accent" />
                         <h3 className="font-display font-bold text-lg">Support</h3>
@@ -94,7 +95,7 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                     </button>
                 </div>
 
-                <div className="flex border-b-2 border-line">
+                <div className="flex border-b-2 border-line shrink-0">
                     <button
                         onClick={() => setTab('new')}
                         className={`flex-1 py-3 text-sm font-semibold border-b-2 -mb-0.5 transition-colors ${tab === 'new' ? 'text-ink border-ink' : 'text-ink/40 border-transparent'}`}
@@ -109,7 +110,7 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                     </button>
                 </div>
 
-                <div className="p-6 max-h-[60vh] overflow-y-auto">
+                <div className="p-6 overflow-y-auto flex-1">
                     {tab === 'new' && (
                         success ? (
                             <div className="py-6 text-center space-y-4">
@@ -201,7 +202,8 @@ const TicketModal = ({ isOpen, onClose, user }) => {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

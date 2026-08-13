@@ -1,5 +1,7 @@
 import random
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+load_dotenv()
 from sqlmodel import Session, SQLModel, select
 from database import engine
 from models import (
@@ -8,6 +10,7 @@ from models import (
     FastIDItem, FastIDType, FastIDStatus, FastIDMatch, RecoveryPath
 )
 from services.auth import hash_password
+from services.claim_agent import review_claim
 
 # Demo-only password for every seeded account. Real registrations set their
 # own password via /api/auth/register - this exists purely so the seeded
@@ -155,14 +158,27 @@ def seed():
             # Add logical state data
             if state == ItemState.READY_FOR_PICKUP:
                 claimant = random.choice([s for s in students if s.id != finder.id])
-                session.add(Claim(
+                claim = Claim(
                     item_id=item.id,
                     claimant_id=claimant.id,
                     owner_private_info="The serial number is correct.",
                     quiz_score=3,
                     is_verified=True,
                     status="APPROVED"
-                ))
+                )
+                session.add(claim)
+                session.flush()
+
+                # Seed data bypasses the real create_claim endpoint, so it
+                # has to trigger the agentic second-opinion review itself -
+                # otherwise every seeded claim would permanently show "No
+                # agent review available" in the admin Claims Review panel,
+                # since nothing else ever calls this. Best-effort like the
+                # real flow: silently skipped if Gemini isn't configured.
+                try:
+                    review_claim(session, claim.id)
+                except Exception as e:
+                    print(f"   (seed) claim review agent skipped for claim {claim.id}: {e!r}")
             
             if state == ItemState.RESOLVED:
                 session.add(AuditLog(
