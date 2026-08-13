@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlmodel import Session, select
 from typing import List, Optional, Any
@@ -26,6 +27,26 @@ ITEM_LOG_ACTIONS = [
 ]
 LOST_ITEM_LOG_ACTIONS = ["REPORT_LOST_ITEM", "LOST_ITEM_STATUS_CHANGE"]
 
+# Archived found items drop out of the public registry after this many days -
+# mirrors the physical Room 110 retention window before an unclaimed item is
+# disposed of, so the browse list doesn't accumulate archived entries forever.
+ARCHIVE_RETENTION_DAYS = 30
+
+
+def _parse_date(value: Optional[str], end_of_day: bool = False) -> Optional[datetime]:
+    """Parses a plain 'YYYY-MM-DD' (or full ISO) date-filter param. Invalid
+    input is treated as "no filter" rather than a 400 - this is a browse
+    convenience filter, not a validated form field."""
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if end_of_day and "T" not in value:
+        parsed = parsed.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return parsed
+
 
 @router.get("/", response_model=List[dict])
 def browse_items(
@@ -33,6 +54,8 @@ def browse_items(
     location_id: Optional[int] = None,
     search: Optional[str] = None,
     state: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     session: Session = Depends(get_session)
 ):
     # Lazy-check stale items on feed load
@@ -45,6 +68,9 @@ def browse_items(
         except ValueError:
             requested_state = None
 
+    parsed_date_from = _parse_date(date_from)
+    parsed_date_to = _parse_date(date_to, end_of_day=True)
+
     # Fetch Found Items - defaults to ACTIVE (the original/only behavior)
     # when no state filter is given, so existing callers see no change.
     found_query = select(Item).where(Item.state == (requested_state or ItemState.ACTIVE))
@@ -54,6 +80,12 @@ def browse_items(
         found_query = found_query.where(Item.location_id == location_id)
     if search:
         found_query = found_query.where(Item.title.contains(search))
+    if parsed_date_from:
+        found_query = found_query.where(Item.found_at >= parsed_date_from)
+    if parsed_date_to:
+        found_query = found_query.where(Item.found_at <= parsed_date_to)
+    if requested_state == ItemState.ARCHIVED:
+        found_query = found_query.where(Item.state_updated_at >= datetime.now() - timedelta(days=ARCHIVE_RETENTION_DAYS))
 
     found_items = session.exec(found_query).all()
 
@@ -69,6 +101,10 @@ def browse_items(
             lost_query = lost_query.where(LostItem.location_id == location_id)
         if search:
             lost_query = lost_query.where(LostItem.title.contains(search))
+        if parsed_date_from:
+            lost_query = lost_query.where(LostItem.lost_at >= parsed_date_from)
+        if parsed_date_to:
+            lost_query = lost_query.where(LostItem.lost_at <= parsed_date_to)
 
         lost_items = session.exec(lost_query).all()
 

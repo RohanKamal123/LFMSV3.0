@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
     Search, Filter, MapPin, ArrowRight, UserCheck, X, Mail, Phone,
-    ShieldCheck, Clock, Archive, Edit3, Trash2, CheckCircle2, Package
+    ShieldCheck, Clock, Archive, Edit3, Trash2, CheckCircle2, Package, CalendarDays
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL, authFetch } from '../api_config';
+
+const ADMIN_PHONE = '01751549994';
 
 const STATE_FILTERS = [
     { value: '', label: 'Active (default)' },
@@ -15,6 +17,20 @@ const STATE_FILTERS = [
     { value: 'RESOLVED', label: 'Resolved' },
     { value: 'ARCHIVED', label: 'Archived' },
 ];
+
+// Quick date-range presets shown as the prioritized filter row, above
+// category/location/state - "when" matters more than "what kind" when
+// scanning a fast-moving registry. `days` is how many days back (inclusive
+// of today) the preset covers; null means no date filter at all.
+const DATE_PRESETS = [
+    { value: '', label: 'Any time', days: null },
+    { value: '1', label: 'Last 1 day', days: 1 },
+    { value: '7', label: 'Last 7 days', days: 7 },
+    { value: '30', label: 'Last 30 days', days: 30 },
+    { value: 'custom', label: 'Custom range', days: undefined },
+];
+
+const toDateInputValue = (date) => date.toISOString().slice(0, 10);
 
 const STATE_BADGE_STYLES = {
     ACTIVE: 'bg-ink text-white',
@@ -64,7 +80,10 @@ const BrowseItems = () => {
         location_id: searchParams.get('location_id') || '',
         search: '',
         state: searchParams.get('state') || '',
+        date_from: '',
+        date_to: '',
     });
+    const [datePreset, setDatePreset] = useState('');
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null); // { type, id } of open detail modal
 
@@ -80,6 +99,8 @@ const BrowseItems = () => {
         if (filters.location_id) params.append('location_id', filters.location_id);
         if (filters.search) params.append('search', filters.search);
         if (filters.state) params.append('state', filters.state);
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
 
         try {
             const res = await fetch(`${API_BASE_URL}/api/browse/?${params.toString()}`);
@@ -97,6 +118,31 @@ const BrowseItems = () => {
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const applyDatePreset = (preset) => {
+        setDatePreset(preset.value);
+        if (preset.days === null) {
+            setFilters(prev => ({ ...prev, date_from: '', date_to: '' }));
+        } else if (preset.days) {
+            const to = new Date();
+            const from = new Date();
+            from.setDate(from.getDate() - (preset.days - 1));
+            setFilters(prev => ({ ...prev, date_from: toDateInputValue(from), date_to: toDateInputValue(to) }));
+        }
+        // preset.days === undefined (Custom range): leave date_from/date_to
+        // as-is so the reveal date inputs let the user pick their own.
+    };
+
+    const handleCustomDateChange = (e) => {
+        const { name, value } = e.target;
+        setDatePreset('custom');
+        setFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    const clearFilters = () => {
+        setFilters({ category_id: '', location_id: '', search: '', state: '', date_from: '', date_to: '' });
+        setDatePreset('');
     };
 
     return (
@@ -118,6 +164,47 @@ const BrowseItems = () => {
                         placeholder="Search by name..."
                         className="input-field pl-11"
                     />
+                </div>
+            </div>
+
+            {/* Time filter - prioritized above the other filters since "when"
+                narrows a fast-moving registry faster than "what kind" */}
+            <div className="mb-5">
+                <p className="eyebrow mb-2.5 flex items-center gap-1.5"><CalendarDays size={12} /> When</p>
+                <div className="flex flex-wrap items-center gap-2">
+                    {DATE_PRESETS.map(p => (
+                        <button
+                            key={p.value}
+                            onClick={() => applyDatePreset(p)}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${datePreset === p.value
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-ink/60 border-line hover:border-primary/40'
+                                }`}
+                        >
+                            {p.label}
+                        </button>
+                    ))}
+                    {datePreset === 'custom' && (
+                        <div className="flex items-center gap-2 pl-1">
+                            <input
+                                type="date"
+                                name="date_from"
+                                value={filters.date_from}
+                                onChange={handleCustomDateChange}
+                                max={filters.date_to || undefined}
+                                className="input-field !py-2 !w-auto text-sm"
+                            />
+                            <span className="text-ink/30 text-sm font-medium">to</span>
+                            <input
+                                type="date"
+                                name="date_to"
+                                value={filters.date_to}
+                                onChange={handleCustomDateChange}
+                                min={filters.date_from || undefined}
+                                className="input-field !py-2 !w-auto text-sm"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -154,7 +241,7 @@ const BrowseItems = () => {
 
                 {Object.values(filters).some(v => v !== '') && (
                     <button
-                        onClick={() => setFilters({ category_id: '', location_id: '', search: '', state: '' })}
+                        onClick={clearFilters}
                         className="px-4 py-2 text-sm font-medium text-ink/40 hover:text-primary transition-all"
                     >
                         Clear filters
@@ -274,6 +361,10 @@ const ItemCard = ({ item, locations, user, isAdmin, onOpen, onClaim }) => {
                             >
                                 Claim item <ArrowRight size={14} />
                             </button>
+                        ) : item.state === 'ARCHIVED' && !isAdmin ? (
+                            <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                                <Archive size={12} /> Reclaim at Room 110
+                            </span>
                         ) : (
                             <span className="text-xs font-semibold text-ink/30">View details</span>
                         )
@@ -399,6 +490,19 @@ const ItemDetailModal = ({ type, id, user, isStaffOrAdmin, isAdmin, locations, c
                             </div>
                         </div>
                     </div>
+
+                    {type === 'FOUND' && state === 'ARCHIVED' && (
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex items-start gap-3">
+                            <Archive className="text-primary shrink-0 mt-0.5" size={18} />
+                            <div>
+                                <p className="text-sm font-semibold text-ink mb-1">This item has been archived</p>
+                                <p className="text-sm text-ink/60">
+                                    If this is yours, it&apos;s no longer claimable online &mdash; visit Room 110 (Staff Office) in person with your ID, or call{' '}
+                                    <a href={`tel:${ADMIN_PHONE}`} className="text-primary font-semibold">{ADMIN_PHONE}</a>.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {editing ? (
                         <div className="space-y-3 bg-paper p-5 rounded-lg border-2 border-primary">
