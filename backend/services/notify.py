@@ -70,6 +70,14 @@ def _send_via_mailersend_api(api_key: str, to_email: str, subject: str, body: st
         print(f"Email send to {to_email} failed: {e!r}")
 
 
+def send_email_direct(to_email: str, subject: str, body: str) -> None:
+    """Public entry point for sending an email to an address with no
+    corresponding User row - e.g. a mock-registry lookup for someone who
+    never signed up for Find-X. Same best-effort semantics as
+    send_notification's email step (never raises)."""
+    _send_email(to_email, subject, body)
+
+
 def send_notification(
     session: Session,
     user_id: int,

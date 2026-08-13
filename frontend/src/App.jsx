@@ -9,6 +9,7 @@ import StaffPanel from './pages/StaffPanel';
 import AdminDashboard from './pages/AdminDashboard';
 import Dashboard from './pages/Dashboard';
 import FastID from './pages/FastID';
+import VisualSearch from './pages/VisualSearch';
 import RoadAccidentsShowcase from './pages/RoadAccidentsShowcase';
 import LFMSPortfolio from './pages/LFMSPortfolio';
 import { AuthProvider } from './context/AuthContext';
@@ -34,6 +35,7 @@ function App() {
                             <Route path="/report-lost" element={<ReportLost />} />
                             <Route path="/claim" element={<ClaimFlow />} />
                             <Route path="/fast-id" element={<FastID />} />
+                            <Route path="/visual-search" element={<VisualSearch />} />
                         </Route>
 
                         {/* Staff & Admin Shared */}

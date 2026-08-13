@@ -52,7 +52,7 @@ app.add_middleware(RequestLoggingMiddleware)
 def on_startup():
     create_db_and_tables()
 
-from api import quiz, items, upload, gatekeeper, browse, claims, lost_items, fast_id, handover, admin_crud, admin_stats, handover_session, tickets
+from api import quiz, items, upload, gatekeeper, browse, claims, lost_items, fast_id, handover, admin_crud, admin_stats, handover_session, tickets, visual_search, admin_agent
 
 app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 app.include_router(items.router, prefix="/api/items", tags=["items"])
@@ -67,6 +67,8 @@ app.include_router(admin_crud.router, prefix="/api/admin", tags=["admin"])
 app.include_router(admin_stats.router, prefix="/api/admin-stats", tags=["admin-stats"])
 app.include_router(handover_session.router, prefix="/api/handover-session", tags=["handover-session"])
 app.include_router(tickets.router, prefix="/api/tickets", tags=["tickets"])
+app.include_router(visual_search.router, prefix="/api/visual-search", tags=["visual-search"])
+app.include_router(admin_agent.router, prefix="/api/admin-agent", tags=["admin-agent"])
 
 
 # Mount uploads directory to serve static files (DATA_DIR-aware, see database.py)

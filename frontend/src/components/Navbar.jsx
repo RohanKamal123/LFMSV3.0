@@ -28,6 +28,7 @@ const Navbar = () => {
                 { name: 'Hub Overview', path: '/dashboard' },
                 ...baseItems,
                 { name: 'Fast ID', path: '/fast-id' },
+                { name: 'Visual Search', path: '/visual-search' },
                 { name: 'Report Found', path: '/found' },
                 { name: 'Report Lost', path: '/report-lost' },
                 { name: 'My Claims', path: '/dashboard?tab=claims' },

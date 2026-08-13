@@ -74,7 +74,8 @@ const FastID = () => {
                     type: 'found',
                     extracted_id: data.extraction.id_number,
                     match_found: data.match_found,
-                    success: data.extraction.success
+                    success: data.extraction.success,
+                    owner_notification: data.owner_notification
                 });
             } else {
                 setError(data.detail || "Failed to process ID card.");
@@ -312,6 +313,14 @@ const FastID = () => {
                                             <h3 className="font-display font-bold text-primary mb-1.5">Owner found</h3>
                                             <p className="text-sm text-ink/60">
                                                 A student already reported this ID as lost. We&apos;ve notified them and the admin to arrange a return.
+                                            </p>
+                                        </div>
+                                    ) : result.owner_notification?.notified ? (
+                                        <div className="bg-accent/5 border border-accent/20 p-5 rounded-lg">
+                                            <h3 className="font-display font-bold text-accent mb-1.5">Owner emailed directly</h3>
+                                            <p className="text-sm text-ink/60">
+                                                No lost report existed for this ID yet, so our agent looked up{' '}
+                                                {result.owner_notification.name || 'the owner'} directly and emailed them that their card was found.
                                             </p>
                                         </div>
                                     ) : (

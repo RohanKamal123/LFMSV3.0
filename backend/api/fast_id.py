@@ -12,6 +12,7 @@ from models import (
 from services.id_reader import extract_id_from_image, validate_id_format
 from services.notify import send_notification
 from services.uploads import save_validated_image
+from services.id_owner_notifier import notify_id_owner
 
 router = APIRouter()
 
@@ -111,6 +112,14 @@ async def report_found_id(
             match_found = True
             session.commit()
 
+    # Agentic step: no existing in-app LOST report to match against, so
+    # nobody would otherwise be told. Look the ID up directly (registered
+    # Find-X user, else the mock university registry) and email the owner
+    # proactively, independent of the FastIDMatch mechanism above.
+    owner_notification = None
+    if extracted_id and not match_found:
+        owner_notification = notify_id_owner(session, extracted_id, fast_id_item_id=item.id)
+
     # Log action
     log = AuditLog(
         actor_id=reporter_id,
@@ -125,7 +134,8 @@ async def report_found_id(
     return {
         "item": item,
         "extraction": extraction_result,
-        "match_found": match_found
+        "match_found": match_found,
+        "owner_notification": owner_notification,
     }
 
 @router.post("/report-lost")

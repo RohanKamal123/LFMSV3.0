@@ -3,7 +3,8 @@ import {
     BarChart3, Users, Archive, AlertTriangle,
     Edit3, Trash2, X, CheckCircle2,
     Database, Layers, Eye, UserCheck, Tags,
-    Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag, Film
+    Clock, Terminal, Package, LifeBuoy, Send, Bot, Flag, Film,
+    Sparkles, Loader2, Wrench
 } from 'lucide-react';
 import {
     XAxis, YAxis, Tooltip, CartesianGrid,
@@ -86,6 +87,7 @@ const AdminDashboard = () => {
         { id: 'flow', label: 'Flow CRUD', icon: Layers, desc: 'Lifecycle Injection' },
         { id: 'tickets', label: 'Support Tickets', icon: LifeBuoy, desc: 'Help Desk' },
         { id: 'claims', label: 'Claims Review', icon: Bot, desc: 'Agentic Second Opinion' },
+        { id: 'ai_assistant', label: 'AI Assistant', icon: Sparkles, desc: 'Ask & Act' },
     ];
 
     return (
@@ -138,6 +140,7 @@ const AdminDashboard = () => {
                 {activeTab === 'flow' && <FlowOverridePanel items={items} refresh={fetchAllData} userId={user?.id} />}
                 {activeTab === 'tickets' && <TicketsPanel tickets={tickets} refresh={fetchAllData} userId={user?.id} />}
                 {activeTab === 'claims' && <ClaimsReviewPanel claims={claims} reviews={claimReviews} refresh={fetchAllData} userId={user?.id} />}
+                {activeTab === 'ai_assistant' && <AdminAgentPanel refresh={fetchAllData} />}
             </main>
         </div>
     );
@@ -965,6 +968,126 @@ const ClaimsReviewPanel = ({ claims, reviews, refresh }) => {
                     );
                 })}
                 {claims.length === 0 && <div className="p-32 text-center text-ink/25 font-semibold tracking-[0.5em] opacity-40">No claims</div>}
+            </div>
+        </div>
+    );
+};
+
+const SUGGESTED_PROMPTS = [
+    "How many items are pending drop-off right now?",
+    "List open support tickets",
+    "Show me the 5 most recent audit log entries",
+];
+
+const AdminAgentPanel = ({ refresh }) => {
+    const [messages, setMessages] = useState([]); // { role: 'admin' | 'agent', text, actions? }
+    const [input, setInput] = useState('');
+    const [sending, setSending] = useState(false);
+
+    const send = async (text) => {
+        const question = (text ?? input).trim();
+        if (!question || sending) return;
+
+        setMessages(m => [...m, { role: 'admin', text: question }]);
+        setInput('');
+        setSending(true);
+
+        try {
+            const res = await authFetch('/api/admin-agent/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: question }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setMessages(m => [...m, { role: 'agent', text: data.reply, actions: data.actions_taken || [] }]);
+                if (data.actions_taken?.length > 0) refresh();
+            } else {
+                setMessages(m => [...m, { role: 'agent', text: data.detail || "Something went wrong.", actions: [] }]);
+            }
+        } catch (err) {
+            setMessages(m => [...m, { role: 'agent', text: "Network error reaching the AI assistant.", actions: [] }]);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    return (
+        <div className="bg-white rounded-xl border border-line shadow-2xl overflow-hidden flex flex-col" style={{ minHeight: '70vh' }}>
+            <div className="p-10 border-b border-line flex justify-between items-center bg-indigo-600 text-white">
+                <div>
+                    <h3 className="text-3xl font-display font-bold flex items-center gap-3">
+                        <Sparkles size={28} /> AI Assistant
+                    </h3>
+                    <p className="text-[10px] font-bold text-indigo-200 mt-1">
+                        Reads live data and can act on it directly &middot; every write is logged
+                    </p>
+                </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-8 space-y-5">
+                {messages.length === 0 && (
+                    <div className="text-center py-12">
+                        <Bot className="mx-auto mb-4 text-ink/15" size={40} />
+                        <p className="text-ink/40 font-semibold mb-6">Ask about items, claims, tickets, or the log - or tell it to resolve/archive something specific.</p>
+                        <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto">
+                            {SUGGESTED_PROMPTS.map(p => (
+                                <button
+                                    key={p}
+                                    onClick={() => send(p)}
+                                    className="px-4 py-2 bg-ink/[0.04] hover:bg-ink/[0.08] rounded-lg text-xs font-semibold text-ink/60 transition-colors"
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {messages.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-xl rounded-2xl px-5 py-4 ${m.role === 'admin' ? 'bg-ink text-white' : 'bg-paper border border-line'}`}>
+                            <p className="text-sm font-medium whitespace-pre-wrap">{m.text}</p>
+                            {m.actions?.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                                    {m.actions.map((a, ai) => (
+                                        <div key={ai} className="flex items-center gap-1.5 text-[10px] font-bold text-accent">
+                                            <Wrench size={11} /> {a}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+
+                {sending && (
+                    <div className="flex justify-start">
+                        <div className="bg-paper border border-line rounded-2xl px-5 py-4 flex items-center gap-2">
+                            <Loader2 className="animate-spin text-ink/40" size={16} />
+                            <span className="text-xs text-ink/40 font-semibold">Thinking...</span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="p-6 border-t border-line flex gap-3">
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
+                    placeholder="Ask the assistant..."
+                    disabled={sending}
+                    className="input-field flex-1"
+                />
+                <button
+                    onClick={() => send()}
+                    disabled={sending || !input.trim()}
+                    className="btn-primary px-6 disabled:opacity-50"
+                >
+                    <Send size={16} />
+                </button>
             </div>
         </div>
     );
